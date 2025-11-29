@@ -33,6 +33,7 @@ from drf_yasg import openapi
         ),
         400: openapi.Response('Bad Request - Validation error', schema=openapi.Schema(type=openapi.TYPE_OBJECT)),
     },
+    security=[],
     operation_description='Register a new user account',
     tags=['Authentication']
 )
@@ -78,6 +79,7 @@ def register(request):
         ),
         401: openapi.Response('Invalid credentials', schema=openapi.Schema(type=openapi.TYPE_OBJECT)),
     },
+    security=[],
     operation_description='Login with username or email and receive JWT tokens',
     tags=['Authentication']
 )
@@ -153,6 +155,7 @@ class CustomTokenRefreshView(TokenRefreshView):
             ),
             401: openapi.Response('Invalid or expired refresh token', schema=openapi.Schema(type=openapi.TYPE_OBJECT)),
         },
+        security=[],
         operation_description='Refresh JWT access token and receive new tokens',
         tags=['Authentication']
     )
