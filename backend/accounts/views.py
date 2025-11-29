@@ -157,12 +157,5 @@ class CustomTokenRefreshView(TokenRefreshView):
         tags=['Authentication']
     )
     def post(self, request, *args, **kwargs):
-        response = super().post(request, *args, **kwargs)
-        
-        # Add new refresh token to response
-        if response.status_code == 200:
-            refresh = RefreshToken(request.data['refresh'])
-            response.data['refresh'] = str(refresh)
-        
-        return response
+        return super().post(request, *args, **kwargs)
 
