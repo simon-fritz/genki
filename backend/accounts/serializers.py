@@ -56,7 +56,7 @@ class LoginSerializer(serializers.Serializer):
         # If not found, try to find user by email and authenticate
         if not user:
             try:
-                user_obj = User.objects.get(email=username_or_email)
+                user_obj = User.objects.get(email__iexact=username_or_email)
                 user = authenticate(username=user_obj.username, password=password)
             except User.DoesNotExist:
                 pass
