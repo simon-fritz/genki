@@ -10,7 +10,6 @@ from .serializers import (
     RegisterSerializer, 
     LoginSerializer, 
     UserSerializer, 
-    TokenResponseSerializer,
     RefreshTokenSerializer
 )
 
