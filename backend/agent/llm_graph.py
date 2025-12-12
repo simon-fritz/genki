@@ -113,12 +113,15 @@ def generator_node(state: AgentState):
 
 def critic_node(state: AgentState):
     """
-    Reflection Step: Critiques the draft against user preferences.
+    Reflection Step: Critiques the draft against user preferences and question.
     """
     prompt = (
-        f"Critique this flashcard answer based on preferences: '{state['user_preferences']}'. "
-        f"Draft: {state['draft_answer']}\n"
-        "If it is good, return 'PERFECT'. If bad, provide specific short feedback."
+        f"You are a teacher grading a flashcard.\n"
+        f"1. The User asked: '{state['front']}'\n"
+        f"2. The Agent answered: '{state['draft_answer']}'\n"
+        f"3. User's learning style: '{state['user_preferences']}'\n\n"
+        "Task: Does the answer correctly address the question AND match the learning style? "
+        "If yes, return 'PERFECT'. If no, explain why."
     )
     response = llm.invoke(prompt)
     feedback = response.content.strip()
