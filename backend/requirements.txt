@@ -7,3 +7,5 @@ langchain-community>=0.2.0
 langchain-google-genai>=0.1.0
 python-dotenv>=1.0.1
 dotenv>=0.9.9
+langgraph>=0.1.0
+tavily-python>=0.1.0

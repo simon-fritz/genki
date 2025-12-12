@@ -1,4 +1,4 @@
-"""URL configuration for the agents app."""
+"""URL configuration for the agent app."""
 from django.urls import path
 
 from .views import FlashcardBacksideView

@@ -1,19 +1,11 @@
 """Serializers for the agents app."""
 from rest_framework import serializers
 
-
-class FlashcardBacksideRequestSerializer(serializers.Serializer):
+class FlashcardRequestSerializer(serializers.Serializer):
     front = serializers.CharField(allow_blank=False, trim_whitespace=True, max_length=2000)
+    deck_id = serializers.CharField(required=True, help_text="The ID of the deck to search documents in.")
 
-
-class GuardrailResultSerializer(serializers.Serializer):
-    allowed = serializers.BooleanField()
-    severity = serializers.CharField()
-    reasons = serializers.ListField(child=serializers.CharField(), allow_empty=True)
-    raw = serializers.CharField(required=False, allow_blank=True)
-
-
-class FlashcardBacksideResponseSerializer(serializers.Serializer):
+class FlashcardResponseSerializer(serializers.Serializer):
     front = serializers.CharField()
     back = serializers.CharField()
-    guardrail = GuardrailResultSerializer()
+    tags = serializers.ListField(child=serializers.CharField(), required=False)
