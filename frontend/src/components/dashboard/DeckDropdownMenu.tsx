@@ -1,0 +1,67 @@
+import {
+    MoreVertical,
+    Edit,
+    Trash,
+    Copy,
+    TableProperties,
+    Download,
+    SlidersHorizontal,
+    LucideSlidersHorizontal,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
+const DeckDropdownMenu = () => {
+    return (
+        <DropdownMenu>
+            {/* asChild tells DropdownMenuTrigger to use its direct child (the Button)*/}
+            <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <MoreVertical className="h-4 w-4" />
+                    {/* screenreader text for accessibility */}
+                    <span className="sr-only">More actions</span>
+                </Button>
+            </DropdownMenuTrigger>
+
+            {/* content of the dropdown menu */}
+            <DropdownMenuContent align="end" className="w-60">
+                <DropdownMenuItem>
+                    <Edit className="mr-2 h-4 w-4" />
+                    <span>Rename deck</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem>
+                    <Trash className="mr-2 h-4 w-4" />
+                    <span>Delete deck</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem>
+                    <Copy className="mr-2 h-4 w-4" />
+                    <span>Copy deck</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem>
+                    <TableProperties className="mr-2 h-4 w-4" />
+                    <span>Manage cards</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem>
+                    <Download className="mr-2 h-4 w-4" />
+                    <span>Download .apkg</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem>
+                    <SlidersHorizontal className="mr-2 h-4 w-4" />
+                    <span>Customize learning</span>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+        </DropdownMenu>
+    );
+};
+
+export default DeckDropdownMenu;
