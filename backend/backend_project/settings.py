@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'core',
     'cards',
     'agents',
+    'uploads',
 ]
 
 MIDDLEWARE = [
@@ -136,3 +137,9 @@ SIMPLE_JWT = {
     'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
     'TOKEN_BLACKLIST_CLASSES': ('rest_framework_simplejwt.token_blacklist.models.BlacklistedToken', 'rest_framework_simplejwt.token_blacklist.models.OutstandingToken',),
 }
+
+# Supabase configuration for vector storage
+SUPABASE_URL = os.getenv('SUPABASE_URL', '')
+SUPABASE_KEY = os.getenv('SUPABASE_KEY', '')
+SUPABASE_VECTOR_TABLE = os.getenv('SUPABASE_VECTOR_TABLE', 'documents')
+SUPABASE_QUERY_NAME = os.getenv('SUPABASE_QUERY_NAME', f"{SUPABASE_VECTOR_TABLE}_match")

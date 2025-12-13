@@ -6,11 +6,14 @@ from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from .models import Deck, Card
 from .serializers import DeckSerializer, CardSerializer, CardReviewSerializer
+from uploads.serializers import DeckDocumentUploadSerializer
+from uploads.services.document_ingestion import DocumentIngestionError, ingest_document
 
 
 class DeckViewSet(viewsets.ModelViewSet):
@@ -30,6 +33,67 @@ class DeckViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """Automatically set the deck owner to the current user on creation."""
         serializer.save(user=self.request.user)
+
+    @swagger_auto_schema(
+        method="post",
+        request_body=DeckDocumentUploadSerializer,
+        responses={
+            201: openapi.Response(
+                description="Document ingested and embedded into Supabase.",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "deck": openapi.Schema(type=openapi.TYPE_INTEGER),
+                        "filename": openapi.Schema(type=openapi.TYPE_STRING),
+                        "chunks_ingested": openapi.Schema(type=openapi.TYPE_INTEGER),
+                    },
+                ),
+            ),
+            400: openapi.Response(
+                description="Validation or ingestion error.",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "error": openapi.Schema(type=openapi.TYPE_STRING),
+                        "reason": openapi.Schema(type=openapi.TYPE_STRING),
+                    },
+                ),
+            ),
+        },
+        operation_description=(
+                "Upload a PDF, split it into chunks, embed the content, and store vectors in Supabase."
+        ),
+    )
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="upload-document",
+        parser_classes=[MultiPartParser, FormParser],
+    )
+    def upload_document(self, request, pk=None):
+        """Upload a PDF to a deck and store its embeddings in Supabase."""
+
+        deck = self.get_object()
+        serializer = DeckDocumentUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        uploaded_file = serializer.validated_data["file"]
+
+        try:
+            chunks_ingested = ingest_document(deck, uploaded_file)
+        except DocumentIngestionError as exc:
+            return Response(
+                {"error": "INGESTION_FAILED", "reason": str(exc)},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return Response(
+            {
+                "deck": deck.id,
+                "filename": getattr(uploaded_file, "name", None),
+                "chunks_ingested": chunks_ingested,
+            },
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class CardViewSet(viewsets.ModelViewSet):
