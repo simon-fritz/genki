@@ -32,7 +32,6 @@ function SettingsPage() {
         <div className="p-10 max-w-[800px] mx-auto">
             <h1 className="text-center">Learning Style Settings</h1>
 
-            {/* Now adding a new setting is just one line of code! */}
             <SettingSlider title="Text Length" startLabel="Short" endLabel="Long" />
             <SettingSlider title="Equations" startLabel="Few" endLabel="Many" />
             <SettingSlider title="Examples" startLabel="Few" endLabel="Many" />

@@ -22,7 +22,12 @@ const Header = () => {
                     }}
                     className="mx-1 h-7 w-7"
                 />
-                <User className="ml-1 h-7 w-7" />
+                <User
+                    onClick={() => navigate('/login')}
+                    className="ml-1 h-7 w-7 cursor-pointer"
+                    role="button"
+                    aria-label="Account"
+                />
             </div>
         </div>
     );
