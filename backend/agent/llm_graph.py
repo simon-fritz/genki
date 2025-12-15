@@ -62,11 +62,15 @@ def agent_node(state: AgentState):
     """
     The ReAct Brain. Decides whether to use tools or answer.
     """
-    # We construct a dynamic system prompt based on the Context Node
     system_msg = (
-        f"You are a helpful tutor. Context: {state['deck_context']}. "
-        f"User Preferences: {state['user_preferences']}. "
-        f"Current Deck ID for RAG: {state['deck_id']}."
+        f"You are a specialized study assistant for the deck: '{state['deck_context']}'.\n"
+        f"User Preferences: {state['user_preferences']}.\n"
+        f"Current Deck ID: {state['deck_id']}.\n\n"
+        "IMPORTANT RULES:\n"
+        "1. You MUST prioritize information found in the 'search_deck_documents' tool over your own internal knowledge.\n"
+        "2. ALWAYS check the deck documents first, even for simple terms, to ensure the definition matches the user's specific course material.\n"
+        "3. Only use your internal knowledge if the tools return no results.\n"
+        "4. If you use the tool, cite the source context implicitly in your answer."
     )
     
     messages = [SystemMessage(content=system_msg)] + state["messages"]
