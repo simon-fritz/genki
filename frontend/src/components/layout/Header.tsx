@@ -5,15 +5,20 @@ const Header = () => {
     const navigate = useNavigate();
 
     return (
-        <div className="py-2 flex w-full items-center">
-            <p
-                className="mr-4 text-2xl font-bold"
+        <div className="border-b border-gray-200 bg-white py-4 flex w-full items-center px-6">
+            <div
+                className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={() => {
                     navigate("/");
                 }}
             >
-                GenKi
-            </p>
+                <img 
+                    src="/logo.png" 
+                    alt="Anki GenAI Logo" 
+                    className="h-14 w-auto"
+                />
+                <p className="text-2xl font-bold text-gray-900">GenKi</p>
+            </div>
             {/* user and settings */}
             <div className="my-1 ml-auto flex">
                 <SlidersHorizontal

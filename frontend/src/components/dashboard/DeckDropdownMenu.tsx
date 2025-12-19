@@ -6,7 +6,7 @@ import {
     TableProperties,
     Download,
     SlidersHorizontal,
-    LucideSlidersHorizontal,
+    Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +15,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { RagUpload } from "../settings/RagUpload";
 
 const DeckDropdownMenu = () => {
     return (
@@ -58,6 +59,11 @@ const DeckDropdownMenu = () => {
                 <DropdownMenuItem>
                     <SlidersHorizontal className="mr-2 h-4 w-4" />
                     <span>Customize learning</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <Upload className="mr-2 h-4 w-4" />
+                    <RagUpload isMenuItem={true} />
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>
