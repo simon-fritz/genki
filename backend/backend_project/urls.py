@@ -22,7 +22,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/auth/", include("accounts.urls")),
     path("api/", include("cards.urls")),
-    path("api/agents/", include("agents.urls")),
+    path("api/agents/", include("agent.urls")),
     path("api/docs/", schema_view.with_ui("swagger", cache_timeout=0), name="schema-swagger-ui"),
     path("api/docs/swagger.json", schema_view.without_ui(cache_timeout=0), name="schema-json"),
     path("", RedirectView.as_view(url="/api/docs/", permanent=False)),
