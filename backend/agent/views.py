@@ -1,6 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, serializers
+from rest_framework.permissions import IsAuthenticated
 from drf_yasg.utils import swagger_auto_schema
 from langchain_core.messages import HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
@@ -17,6 +18,7 @@ class RapidFlashcardRequestSerializer(serializers.Serializer):
     front = serializers.CharField()
 
 class FlashcardBacksideView(APIView):
+    permission_classes = [IsAuthenticated]
     
     @swagger_auto_schema(request_body=FlashcardRequestSerializer)
     def post(self, request):
@@ -63,6 +65,7 @@ class FlashcardBacksideView(APIView):
 
 
 class RapidFlashcardBacksideView(APIView):
+    permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(request_body=RapidFlashcardRequestSerializer)
     def post(self, request):
@@ -98,4 +101,4 @@ class RapidFlashcardBacksideView(APIView):
             return Response(
                 {"error": "Generation Failed", "details": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            )   
