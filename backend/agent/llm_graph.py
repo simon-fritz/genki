@@ -109,6 +109,8 @@ def tool_node(state: AgentState):
     last_message = state["messages"][-1]
     tool_calls = getattr(last_message, "tool_calls", None) or []
     results = []
+    new_meta = dict(state.get("generation_meta", {}))
+    rag_was_used = False
 
     for tool_call in tool_calls:
         tool_name = tool_call["name"]
@@ -120,12 +122,15 @@ def tool_node(state: AgentState):
             res = search_deck_documents.invoke(tool_args)
             # Mark RAG usage if we got content
             if res:
-                state["generation_meta"]["rag_used"] = True
+                rag_was_used = True
         elif tool_name == "web_search_tool":
             res = web_search_tool.invoke(tool_args)
         else:
             res = "Tool not found."
-
+        
+        if rag_was_used:
+            new_meta["rag_used"] = True
+    
         results.append(
             ToolMessage(
                 tool_call_id=tool_call["id"],
@@ -133,7 +138,7 @@ def tool_node(state: AgentState):
             )
         )
 
-    return {"messages": results}
+    return {"messages": results, "generation_meta": new_meta}
 
 
 def generator_node(state: AgentState):
