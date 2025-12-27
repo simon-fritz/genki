@@ -140,5 +140,5 @@ SIMPLE_JWT = {
 # Supabase configuration for vector storage
 SUPABASE_URL = os.getenv('SUPABASE_URL', '')
 SUPABASE_KEY = os.getenv('SUPABASE_KEY', '')
-SUPABASE_VECTOR_TABLE = os.getenv('SUPABASE_VECTOR_TABLE', 'documents')
-SUPABASE_QUERY_NAME = os.getenv('SUPABASE_QUERY_NAME', f"{SUPABASE_VECTOR_TABLE}_match")
+SUPABASE_VECTOR_TABLE = "documents"
+SUPABASE_QUERY_NAME = "match_documents"
