@@ -25,6 +25,7 @@ class CardSerializer(serializers.ModelSerializer):
             "deck",
             "front",
             "back",
+            "generation_meta",
             "due_at",
             "interval",
             "ease_factor",
@@ -34,6 +35,18 @@ class CardSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate_generation_meta(self, meta):
+        if meta is None:
+            return {}
+        if not isinstance(meta, dict):
+            raise serializers.ValidationError("generation_meta must be an object.")
+        # Keep it small + safe
+        allowed_keys = {"prompt_version", "features_used", "rag_used", "sources"}
+        unknown = set(meta.keys()) - allowed_keys
+        if unknown:
+            raise serializers.ValidationError(f"Unknown generation_meta keys: {sorted(unknown)}")
+        return meta
 
     def validate_deck(self, deck):
         """Ensure the deck (if set) belongs to the current user."""

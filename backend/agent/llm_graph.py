@@ -4,13 +4,16 @@ from typing import Literal
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, ToolMessage
 from langchain_core.output_parsers import JsonOutputParser
 from langgraph.graph import StateGraph, END
 
+from accounts.models import UserProfile
+from cards.models import Deck
 from django.conf import settings
 from .state import AgentState
 from .tools import search_deck_documents, web_search_tool
+from .prompting import build_style_instructions
 
 logger = logging.getLogger(__name__)
 
@@ -26,85 +29,112 @@ llm = ChatGoogleGenerativeAI(
 tools = [search_deck_documents, web_search_tool]
 llm_with_tools = llm.bind_tools(tools)
 
+
 # --- Nodes ---
 
 def context_builder_node(state: AgentState):
-    """
-    Simulates fetching user settings from Postgres.
-    """
-    # TODO: Replace with: UserProfile.objects.get(id=state['user_id'])
-    user_prefs = "I prefer answers that use coding analogies. I am a visual learner." 
-    deck_ctx = "Computer Science - Data Structures"
-    
+    user_prefs = {}
+    user_weights = {}
+    deck_ctx = "Unknown deck"
+
+    if state["user_id"]:
+        profile, _ = UserProfile.objects.get_or_create(user_id=state["user_id"])
+        user_prefs = profile.preferences or {}
+        user_weights = profile.weights or {}
+
+    deck = Deck.objects.filter(id=state["deck_id"]).only("name").first()
+    if deck:
+        deck_ctx = deck.name
+
+    style, features_used = build_style_instructions(user_prefs, user_weights)
+
     return {
         "user_preferences": user_prefs,
+        "user_weights": user_weights,
         "deck_context": deck_ctx,
-        "critique_count": 0 # Initialize counter
+        "style_instructions": style,
+        "features_used": features_used,
+        "critique_count": 0,
+        "generation_meta": {
+            "prompt_version": "v1",
+            "features_used": features_used,
+            "rag_used": False,
+            "sources": [],
+        },
     }
+
 
 def guardrail_node(state: AgentState):
     """
     Checks for safety. 
     """
     prompt = ChatPromptTemplate.from_messages([
-        ("system", "You are a content safety filter. Check if the text is safe. Return JSON: {{'allowed': bool, 'reason': str}}"),
+        ("system",
+         "You are a content safety filter. Check if the text is safe. Return JSON: {{'allowed': bool, 'reason': str}}"),
         ("human", "{text}")
     ])
     chain = prompt | llm | JsonOutputParser()
     result = chain.invoke({"text": state["front"]})
-    
+
     return {
         "is_safe": result.get("allowed", False),
         "safety_reason": result.get("reason", "Unknown")
     }
+
 
 def agent_node(state: AgentState):
     """
     The ReAct Brain. Decides whether to use tools or answer.
     """
     system_msg = (
-        f"You are a specialized study assistant for the deck: '{state['deck_context']}'.\n"
-        f"User Preferences: {state['user_preferences']}.\n"
-        f"Current Deck ID: {state['deck_id']}.\n\n"
+        f"You are a study assistant generating the BACK side of an Anki card.\n"
+        f"Deck: '{state['deck_context']}' (deck_id={state['deck_id']}).\n\n"
+        f"Personalization instructions:\n{state['style_instructions']}\n\n"
         "IMPORTANT RULES:\n"
         "1. You MUST prioritize information found in the 'search_deck_documents' tool over your own internal knowledge.\n"
         "2. ALWAYS check the deck documents first, even for simple terms, to ensure the definition matches the user's specific course material.\n"
         "3. Only use your internal knowledge if the tools return no results.\n"
         "4. If you use the tool, cite the source context implicitly in your answer."
     )
-    
+
     messages = [SystemMessage(content=system_msg)] + state["messages"]
     response = llm_with_tools.invoke(messages)
     return {"messages": [response]}
+
 
 def tool_node(state: AgentState):
     """
     Executes tools if the Agent requested them.
     """
     last_message = state["messages"][-1]
-    tool_calls = last_message.tool_calls
+    tool_calls = getattr(last_message, "tool_calls", None) or []
     results = []
-    
+
     for tool_call in tool_calls:
         tool_name = tool_call["name"]
-        tool_args = tool_call["args"]
-        
-        # Security: Inject deck_id if the LLM forgot it, or validate it
-        if tool_name == "search_deck_documents" and "deck_id" not in tool_args:
-             tool_args["deck_id"] = state["deck_id"]
+        tool_args = tool_call.get("args", {}) or {}
 
+        # Security: Inject deck_id if the LLM forgot it, or validate it
         if tool_name == "search_deck_documents":
+            tool_args["deck_id"] = int(state["deck_id"])
             res = search_deck_documents.invoke(tool_args)
+            # Mark RAG usage if we got content
+            if res:
+                state["generation_meta"]["rag_used"] = True
         elif tool_name == "web_search_tool":
             res = web_search_tool.invoke(tool_args)
         else:
             res = "Tool not found."
-            
+
         results.append(
-            {"role": "tool", "tool_call_id": tool_call["id"], "name": tool_name, "content": str(res)}
+            ToolMessage(
+                tool_call_id=tool_call["id"],
+                content=str(res),
+            )
         )
-        
+
     return {"messages": results}
+
 
 def generator_node(state: AgentState):
     """
@@ -112,26 +142,27 @@ def generator_node(state: AgentState):
     """
     # Extract the final answer from the ReAct conversation
     last_message = state["messages"][-1]
-    draft_text = last_message.content
+    draft_text = getattr(last_message, "content", "") or ""
     return {"draft_answer": draft_text}
+
 
 def critic_node(state: AgentState):
     """
     Reflection Step: Critiques the draft against user preferences and question.
     """
     prompt = (
-        f"You are a teacher grading a flashcard.\n"
+        f"You are a teacher grading a flashcard answer.\n"
         f"1. The User asked: '{state['front']}'\n"
         f"2. The Agent answered: '{state['draft_answer']}'\n"
         f"3. User's learning style: '{state['user_preferences']}'\n\n"
         "Task: Does the answer correctly address the question AND match the learning style? "
-        "If yes, return 'PERFECT'. If no, explain why."
+        "If yes, return 'PERFECT'. Otherwise explain what to improve."
     )
     response = llm.invoke(prompt)
     feedback = response.content.strip()
-    
+
     if "PERFECT" in feedback:
-        return {"critique_count": state["critique_count"] + 1} # No change to messages
+        return {"critique_count": state["critique_count"] + 1}  # No change to messages
     else:
         # Inject feedback back into conversation so Agent can fix it
         return {
@@ -139,42 +170,47 @@ def critic_node(state: AgentState):
             "messages": [HumanMessage(content=f"Refine the answer. Feedback: {feedback}")]
         }
 
+
 def formatter_node(state: AgentState):
     """
-    Ensures final output is strict JSON for the frontend.
+    Deterministic JSON: the UI expects strict JSON, don't rely on the LLM for formatting.
     """
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", "Format the text into JSON: {{'front': str, 'back': str, 'tags': [str]}}."),
-        ("human", "Front: {front}\nBack: {draft}")
-    ])
-    chain = prompt | llm | JsonOutputParser()
-    result = chain.invoke({"front": state["front"], "draft": state["draft_answer"]})
-    return {"final_json": result}
+    tags = []
+    return {
+        "final_json": {
+            "front": state["front"],
+            "back": state["draft_answer"],
+            "tags": tags,
+            "generation_meta": state["generation_meta"],
+        }
+    }
+
 
 # --- Conditional Edges ---
 
 def route_guardrail(state: AgentState) -> Literal["agent", "end_unsafe"]:
-    if state["is_safe"]:
-        return "agent"
-    return "end_unsafe"
+    return "agent" if state["is_safe"] else "end_unsafe"
+
 
 def route_agent(state: AgentState) -> Literal["tools", "generator"]:
     last_msg = state["messages"][-1]
-    if last_msg.tool_calls:
+    if getattr(last_msg, "tool_calls", None):
         return "tools"
     return "generator"
 
+
 def route_critic(state: AgentState) -> Literal["agent", "formatter"]:
     # Check if critique loop maxed out (avoid infinite loops)
-    if state["critique_count"] > 3: 
+    if state["critique_count"] > 3:
         return "formatter"
-    
+
     # Check the last message. If it was a HumanMessage (feedback), go back to Agent.
     last_msg = state["messages"][-1]
     if isinstance(last_msg, HumanMessage) and "Feedback:" in last_msg.content:
         return "agent"
-    
+
     return "formatter"
+
 
 # --- Build the Graph ---
 

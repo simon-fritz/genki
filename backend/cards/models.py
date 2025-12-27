@@ -99,6 +99,8 @@ class Card(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    generation_meta = models.JSONField(default=dict, blank=True)
+
     objects = CardManager()
 
     def __str__(self):

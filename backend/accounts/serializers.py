@@ -3,6 +3,16 @@ from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+from .models import UserProfile
+
+ALLOWED_PREF_KEYS = {
+    "verbosity", "structure", "include_examples", "examples_per_answer",
+    "include_analogies", "analogy_domain", "step_by_step", "socratic_mode",
+    "include_mnemonic", "quiz_at_end", "language", "difficulty", "auto_tune",
+}
+
+ALLOWED_WEIGHT_KEYS = {"examples", "analogies", "step_by_step", "mnemonic", "quiz", "visual", "concise"}
+
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -75,3 +85,33 @@ class TokenResponseSerializer(serializers.Serializer):
 
 class RefreshTokenSerializer(TokenRefreshSerializer):
     pass
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ["preferences", "weights", "generations", "reviews", "updated_at"]
+
+
+class UserProfileUpdateSerializer(serializers.Serializer):
+    preferences = serializers.DictField(required=False)
+    weights = serializers.DictField(required=False)
+
+    def validate_preferences(self, prefs):
+        unknown = set(prefs.keys()) - ALLOWED_PREF_KEYS
+        if unknown:
+            raise serializers.ValidationError(f"Unknown preference keys: {sorted(unknown)}")
+        return prefs
+
+    def validate_weights(self, weights):
+        unknown = set(weights.keys()) - ALLOWED_WEIGHT_KEYS
+        if unknown:
+            raise serializers.ValidationError(f"Unknown weight keys: {sorted(unknown)}")
+        for k, v in weights.items():
+            try:
+                fv = float(v)
+            except Exception:
+                raise serializers.ValidationError(f"Weight '{k}' must be a number.")
+            if fv < 0 or fv > 1:
+                raise serializers.ValidationError(f"Weight '{k}' must be between 0 and 1.")
+        return weights
