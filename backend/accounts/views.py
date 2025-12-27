@@ -5,6 +5,9 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenRefreshView
 
+from .models import UserProfile
+from .serializers import UserProfileSerializer, UserProfileUpdateSerializer
+
 from .serializers import (
     RegisterSerializer, 
     LoginSerializer, 
@@ -162,3 +165,85 @@ class CustomTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
 
+@swagger_auto_schema(
+    method="get",
+    responses={
+        200: openapi.Response(
+            description="Current user's GenAI preferences and weights.",
+            schema=UserProfileSerializer(),
+        ),
+        401: openapi.Response(
+            description="Unauthorized",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "detail": openapi.Schema(type=openapi.TYPE_STRING),
+                },
+            ),
+        ),
+    },
+    security=[{"Bearer": []}],
+    operation_description="Fetch the authenticated user's learning preferences used for GenAI personalization.",
+    tags=["Authentication"],
+)
+@swagger_auto_schema(
+    method="patch",
+    request_body=UserProfileUpdateSerializer,
+    responses={
+        200: openapi.Response(
+            description="Updated preferences and weights.",
+            schema=UserProfileSerializer(),
+        ),
+        400: openapi.Response(
+            description="Validation error (unknown keys or invalid weights).",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={
+                    "preferences": openapi.Schema(type=openapi.TYPE_OBJECT),
+                    "weights": openapi.Schema(type=openapi.TYPE_OBJECT),
+                    "detail": openapi.Schema(type=openapi.TYPE_STRING),
+                },
+            ),
+        ),
+        401: openapi.Response(
+            description="Unauthorized",
+            schema=openapi.Schema(
+                type=openapi.TYPE_OBJECT,
+                properties={"detail": openapi.Schema(type=openapi.TYPE_STRING)},
+            ),
+        ),
+    },
+    security=[{"Bearer": []}],
+    operation_description=(
+        "Partially update the authenticated user's learning preferences and/or tuning weights.\n\n"
+        "Example body:\n"
+        "{\n"
+        '  "preferences": {"verbosity": "concise", "include_analogies": true},\n'
+        '  "weights": {"analogies": 0.8}\n'
+        "}"
+    ),
+    tags=["Authentication"],
+)
+@api_view(["GET", "PATCH"])
+@permission_classes([IsAuthenticated])
+def preferences(request):
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+    if request.method == "GET":
+        return Response(UserProfileSerializer(profile).data, status=status.HTTP_200_OK)
+
+    # PATCH
+    serializer = UserProfileUpdateSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    prefs_patch = serializer.validated_data.get("preferences", {})
+    weights_patch = serializer.validated_data.get("weights", {})
+
+    new_prefs = {**profile.preferences, **prefs_patch}
+    new_weights = {**profile.weights, **weights_patch}
+
+    profile.preferences = new_prefs
+    profile.weights = new_weights
+    profile.save(update_fields=["preferences", "weights", "updated_at"])
+
+    return Response(UserProfileSerializer(profile).data, status=status.HTTP_200_OK)
