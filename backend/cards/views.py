@@ -15,6 +15,9 @@ from .serializers import DeckSerializer, CardSerializer, CardReviewSerializer
 from uploads.serializers import DeckDocumentUploadSerializer
 from uploads.services.document_ingestion import DocumentIngestionError, ingest_document
 
+from accounts.models import UserProfile
+from accounts.services.preferences import update_profile_from_review
+
 
 class DeckViewSet(viewsets.ModelViewSet):
     """CRUD for decks scoped to the authenticated user."""
@@ -161,7 +164,7 @@ class CardViewSet(viewsets.ModelViewSet):
 
         # ===== Simplified SM-2 Algorithm Implementation =====
         # Adjust these parameters based on your learning goals
-        
+
         if rating < 2:
             # Poor performance: reset repetitions and increase lapses
             card.repetitions = 0
@@ -170,7 +173,7 @@ class CardViewSet(viewsets.ModelViewSet):
         else:
             # Good performance: increment repetitions
             card.repetitions += 1
-            
+
             if card.repetitions == 1:
                 card.interval = 1  # first review: 1 day
             elif card.repetitions == 2:
@@ -181,7 +184,7 @@ class CardViewSet(viewsets.ModelViewSet):
                     1,
                     int(card.interval * card.ease_factor)
                 )
-        
+
         # Update ease_factor based on rating (SM-2 formula)
         # EF' = EF + (0.1 - (5 - rating) * (0.08 + (5 - rating) * 0.02))
         if rating >= 2:
@@ -191,13 +194,23 @@ class CardViewSet(viewsets.ModelViewSet):
             )
         else:
             card.ease_factor = max(1.3, card.ease_factor - 0.2)
-        
+
         # Set next due time based on interval
         now = timezone.now()
         card.due_at = now + timedelta(days=card.interval)
-        
+
         # Save the updated card
         card.save()
+
+        # Tune preferences
+        features_used = (card.generation_meta or {}).get("features_used", [])
+        try:
+            profile, _ = UserProfile.objects.get_or_create(user=request.user)
+            if profile.preferences.get("auto_tune", True):
+                update_profile_from_review(profile, rating, features_used)
+        except Exception:
+            # never block studying if tuning fails
+            pass
 
         # Return the updated card as JSON
         serializer = self.get_serializer(card)
