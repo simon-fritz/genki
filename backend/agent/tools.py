@@ -1,3 +1,4 @@
+from django.conf import settings
 from langchain_core.tools import tool
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain_community.vectorstores import SupabaseVectorStore
@@ -9,23 +10,22 @@ web_search_tool = TavilySearchResults(max_results=3)
 
 # 2. Scoped RAG Tool
 @tool
-def search_deck_documents(query: str, deck_id: str) -> str:
+def search_deck_documents(query: str, deck_id: int) -> str:
     """Search deck-specific ingested documents in Supabase and return concatenated matches."""
     embeddings = _build_embedding_model()
     client = _build_supabase_client()
-    
+
     vector_store = SupabaseVectorStore(
         client=client,
         embedding=embeddings,
-        table_name="documents",
-        query_name="documents_match" 
+        table_name=getattr(settings, "SUPABASE_VECTOR_TABLE", "documents"),
+        query_name=getattr(settings, "SUPABASE_QUERY_NAME", "match_documents"),
     )
-    
-    # Filter by deck_id
+
     results = vector_store.similarity_search(
-        query, 
-        k=4, 
-        filter={"deck_id": deck_id}
+        query,
+        k=4,
+        filter={"deck_id": int(deck_id)},
     )
-    
-    return "\n\n".join([doc.page_content for doc in results])
+
+    return "\n\n".join(doc.page_content for doc in results) if results else ""
