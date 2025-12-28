@@ -206,7 +206,7 @@ def route_agent(state: AgentState) -> Literal["tools", "generator"]:
 
 def route_critic(state: AgentState) -> Literal["agent", "formatter"]:
     # Check if critique loop maxed out (avoid infinite loops)
-    if state["critique_count"] > 3:
+    if state["critique_count"] > 1:
         return "formatter"
 
     # Check the last message. If it was a HumanMessage (feedback), go back to Agent.
