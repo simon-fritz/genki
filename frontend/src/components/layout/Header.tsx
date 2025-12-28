@@ -8,6 +8,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import logoIcon from "@/assets/logo_icon.png";
 
 const Header = () => {
     const navigate = useNavigate();
@@ -21,7 +22,7 @@ const Header = () => {
                 }}
             >
                 <img
-                    src="/logo.png"
+                    src={logoIcon}
                     alt="Anki GenAI Logo"
                     className="h-14 w-auto"
                 />
