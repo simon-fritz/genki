@@ -68,7 +68,7 @@ SUPABASE_KEY=your-service-role-secret
 
 In the Supabase dashboard:
 
-1. pen SQL Editor.
+1. Open SQL Editor.
 2. Create the extension, table, and function (adjusting vector length to 3072 for Gemini):
 
 ```sql
