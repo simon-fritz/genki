@@ -9,10 +9,12 @@ import SettingsPage from "@/pages/Settings/LearnStyleSettingsPage";
 import LoginPage from "@/pages/Auth/LoginPage";
 import RegisterPage from "@/pages/Auth/RegisterPage";
 import CreateCardPage from "./pages/Deck/CreateCardPage";
+import { Toaster } from "@/components/ui/sonner";
 import "./index.css";
 
 createRoot(document.getElementById("root")!).render(
     <StrictMode>
+        <Toaster position="top-center" />
         <BrowserRouter>
             <Routes>
                 <Route element={<MainLayout />}>

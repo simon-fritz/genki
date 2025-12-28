@@ -20,6 +20,7 @@ import {
     FieldSeparator,
 } from "@/components/ui/field";
 import { register } from "@/api/auth";
+import { toast } from "sonner";
 
 function RegisterPage() {
     const navigate = useNavigate();
@@ -56,7 +57,9 @@ function RegisterPage() {
         setLoading(true);
         try {
             await register({ username, email, password, password2 });
-            // Success - redirect to login
+            toast.success(
+                "Account created successfully! Please log in to proceed.",
+            );
             navigate("/login", { state: { registered: true } });
         } catch (err: any) {
             // Axios 400 error: no content, so we show a generic error

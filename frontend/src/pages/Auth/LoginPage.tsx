@@ -10,6 +10,7 @@ import {
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { login as loginApi } from "@/api/auth";
+import { toast } from "sonner";
 
 function LoginPage() {
     const navigate = useNavigate();
@@ -19,8 +20,6 @@ function LoginPage() {
     const [password, setPassword] = useState<string>("");
     const [formError, setFormError] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
-
-    const registered = location.state?.registered;
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -32,6 +31,7 @@ function LoginPage() {
         setLoading(true);
         try {
             await loginApi({ username_or_email: usernameOrEmail, password });
+            toast.success("Logged in successfully");
             navigate("/");
         } catch (err: any) {
             const errorMessage = err?.message || "Login failed";
@@ -52,11 +52,6 @@ function LoginPage() {
                     <CardAction />
                 </CardHeader>
                 <CardContent>
-                    {registered && (
-                        <div className="mb-4 p-2 bg-green-100 text-green-800 rounded text-center">
-                            Registration successful! You can now log in.
-                        </div>
-                    )}
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium mb-1">
