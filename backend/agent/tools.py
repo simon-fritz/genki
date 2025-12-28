@@ -15,17 +15,18 @@ def search_deck_documents(query: str, deck_id: int) -> str:
     embeddings = _build_embedding_model()
     client = _build_supabase_client()
 
-    vector_store = SupabaseVectorStore(
-        client=client,
-        embedding=embeddings,
-        table_name=getattr(settings, "SUPABASE_VECTOR_TABLE", "documents"),
-        query_name=getattr(settings, "SUPABASE_QUERY_NAME", "match_documents"),
-    )
+    query_embedding = embeddings.embed_query(query)
 
-    results = vector_store.similarity_search(
-        query,
-        k=4,
-        filter={"deck_id": int(deck_id)},
-    )
+    query_name = getattr(settings, "SUPABASE_QUERY_NAME", "match_documents")
 
-    return "\n\n".join(doc.page_content for doc in results) if results else ""
+    res = client.rpc(
+        query_name,
+        {
+            "query_embedding": query_embedding,
+            "match_count": 4,
+            "filter": {"deck_id": int(deck_id)},
+        },
+    ).execute()
+
+    rows = res.data or []
+    return "\n\n".join(r.get("content", "") for r in rows if r.get("content")) if rows else ""
