@@ -4,9 +4,13 @@ from rest_framework import status, serializers
 from rest_framework.permissions import IsAuthenticated
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.prompts import ChatPromptTemplate
-from .serializers import FlashcardRequestSerializer, FlashcardResponseSerializer
+from .serializers import (
+    FlashcardRequestSerializer,
+    FlashcardResponseSerializer,
+    FlashcardRevisionRequestSerializer,
+)
 
 
 from cards.models import Deck
@@ -17,6 +21,12 @@ from .state import AgentState
 
 class RapidFlashcardRequestSerializer(serializers.Serializer):
     front = serializers.CharField()
+
+
+class RapidFlashcardRevisionRequestSerializer(serializers.Serializer):
+    front = serializers.CharField()
+    previous_backside = serializers.CharField()
+    feedback = serializers.CharField()
 
 
 class FlashcardBacksideView(APIView):
@@ -74,7 +84,7 @@ class FlashcardBacksideView(APIView):
             "- Generates a personalized answer\n\n"
             "Returns generation_meta so you can store it on the Card and later auto-tune preferences."
         ),
-        tags=["GenAI"],
+        tags=["Agent"],
     )
     def post(self, request):
         serializer = FlashcardRequestSerializer(data=request.data)
@@ -147,7 +157,10 @@ class FlashcardBacksideView(APIView):
 class RapidFlashcardBacksideView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @swagger_auto_schema(request_body=RapidFlashcardRequestSerializer)
+    @swagger_auto_schema(
+        request_body=RapidFlashcardRequestSerializer,
+        tags=["Agent"],
+    )
     def post(self, request):
         serializer = RapidFlashcardRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -184,5 +197,209 @@ class RapidFlashcardBacksideView(APIView):
         except Exception as e:
             return Response(
                 {"error": "Generation Failed", "details": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class RapidFlashcardBacksideRevisionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        request_body=RapidFlashcardRevisionRequestSerializer,
+        tags=["Agent"],
+    )
+    def post(self, request):
+        serializer = RapidFlashcardRevisionRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        data = serializer.validated_data
+        front_text = data["front"].strip()
+        previous_back = data["previous_backside"].strip()
+        feedback = data["feedback"].strip()
+
+        if not front_text or not previous_back or not feedback:
+            return Response(
+                {"error": "front, previous_backside, and feedback are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    "You revise the BACK side of a flashcard as compact Markdown (<=120 words)."
+                    " Keep bullet points or short paragraphs. Avoid headings and code fences."
+                    " Output ONLY the revised back text."
+                    " Use the user's feedback to improve clarity and correctness.",
+                ),
+                (
+                    "human",
+                    "Front: {front}\n\nPrevious back: {previous_back}\n\nUser feedback: {feedback}\n\nProduce the revised back:",
+                ),
+            ]
+        )
+
+        try:
+            chain = prompt | llm
+            response = chain.invoke(
+                {
+                    "front": front_text,
+                    "previous_back": previous_back,
+                    "feedback": feedback,
+                }
+            )
+            back_markdown = getattr(response, "content", str(response))
+
+            return Response(
+                {"front": front_text, "back": back_markdown},
+                status=status.HTTP_200_OK,
+            )
+        except Exception as e:
+            return Response(
+                {"error": "Generation Failed", "details": str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+
+class FlashcardBacksideRevisionView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        request_body=FlashcardRevisionRequestSerializer,
+        responses={
+            200: openapi.Response(
+                description="Revised backside using RAG + user feedback.",
+                schema=FlashcardResponseSerializer(),
+            ),
+            400: openapi.Response(
+                description="Blocked by safety guardrail or invalid input.",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "error": openapi.Schema(type=openapi.TYPE_STRING),
+                        "reason": openapi.Schema(type=openapi.TYPE_STRING),
+                        "details": openapi.Schema(type=openapi.TYPE_STRING),
+                    },
+                ),
+            ),
+            401: openapi.Response(
+                description="Unauthorized (missing/invalid Bearer token).",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={"detail": openapi.Schema(type=openapi.TYPE_STRING)},
+                ),
+            ),
+            404: openapi.Response(
+                description="Deck not found or does not belong to the user.",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={"error": openapi.Schema(type=openapi.TYPE_STRING)},
+                ),
+            ),
+            500: openapi.Response(
+                description="Agent pipeline failure.",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "error": openapi.Schema(type=openapi.TYPE_STRING),
+                        "details": openapi.Schema(type=openapi.TYPE_STRING),
+                    },
+                ),
+            ),
+        },
+        security=[{"Bearer": []}],
+        operation_description=(
+            "Revise an existing backside using user feedback and deck-scoped RAG.\n\n"
+            "Pipeline mirrors the initial generation but seeds the conversation with the previous backside"
+            " and explicit user feedback so the agent can correct or refine it."
+        ),
+        tags=["Agent"],
+    )
+    def post(self, request):
+        serializer = FlashcardRevisionRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        data = serializer.validated_data
+
+        # Ensure deck_id is an integer (coerce if necessary)
+        deck_id_raw = data.get("deck_id")
+        try:
+            deck_id = int(deck_id_raw)
+        except (TypeError, ValueError):
+            return Response(
+                {"error": "deck_id must be an integer."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        data["deck_id"] = deck_id
+
+        # Ensure deck belongs to user
+        deck = Deck.objects.filter(id=deck_id, user=request.user).first()
+        if not deck:
+            return Response(
+                {"error": "Deck not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        front_text = data["front"].strip()
+        previous_back = data["previous_backside"].strip()
+        feedback = data["feedback"].strip()
+
+        if not front_text or not previous_back or not feedback:
+            return Response(
+                {"error": "front, previous_backside, and feedback are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Initialize State with feedback context
+        initial_state: AgentState = {
+            "messages": [
+                HumanMessage(content=front_text),
+                AIMessage(content=previous_back),
+                HumanMessage(
+                    content=(
+                        "Please revise the backside based on this feedback. "
+                        f"User feedback: {feedback}"
+                    )
+                ),
+            ],
+            "front": front_text,
+            "deck_id": deck.id,
+            "user_id": request.user.id if request.user.is_authenticated else 0,
+            "critique_count": 0,
+            # Defaults
+            "is_safe": True,
+            "safety_reason": "",
+            "draft_answer": "",
+            "user_preferences": "",
+            "user_weights": {},
+            "deck_context": "",
+            "style_instructions": "",
+            "features_used": [],
+            "generation_meta": {
+                "prompt_version": "v1",
+                "revision": True,
+                "feedback": feedback,
+                "rag_used": False,
+                "sources": [],
+            },
+            "final_json": {},
+        }
+
+        try:
+            final_state = app.invoke(initial_state)
+
+            if not final_state["is_safe"]:
+                return Response(
+                    {
+                        "error": "Content Blocked",
+                        "reason": final_state["safety_reason"],
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            return Response(final_state["final_json"], status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response(
+                {"error": "Agent Failed", "details": str(e)},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
