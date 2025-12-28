@@ -35,7 +35,7 @@ const Header = () => {
                         onClick={() => {
                             navigate("/settings");
                         }}
-                        className="mx-1 h-7 w-7"
+                        className="mx-1 h-7 w-7 cursor-pointer"
                     />
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>

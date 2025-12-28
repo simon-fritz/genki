@@ -11,7 +11,7 @@ interface DeckButtonProps {
 
 const DeckButton: React.FC<
     DeckButtonProps & React.ComponentProps<typeof Button>
-> = ({ deckName, cardsNew, cardsLearn, cardsDue, ref, ...other }) => {
+> = ({ deckId, deckName, cardsNew, cardsLearn, cardsDue, ref, ...other }) => {
     return (
         <Button variant="outline" size={"deckbutton"} ref={ref} {...other}>
             {/* deck name on the left side of deck button */}
@@ -38,7 +38,7 @@ const DeckButton: React.FC<
                 </span>
 
                 {/* options menu icon */}
-                <DeckDropdownMenu />
+                <DeckDropdownMenu deckId={deckId} deckName={deckName} />
                 {/*<MoreVertical
                     className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer shrink-0 ml-2"
                     onClick={(e) => {
