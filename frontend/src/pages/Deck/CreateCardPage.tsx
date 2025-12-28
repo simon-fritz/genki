@@ -1,22 +1,21 @@
-import { useState } from "react";
-import { useParams, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Plus } from "lucide-react";
 import CardFrontsideField from "@/components/create-card/CardFrontsideField";
 import CardBacksideField from "@/components/create-card/CardBacksideField";
 import { Button } from "@/components/ui/button";
-import api from "@/api/client";
 
 const CreateCardPage = () => {
     const navigate = useNavigate();
 
-    // get deckName from url parameter
-    const { deckId } = useParams();
+    // get deckId from url parameter
+    // const { deckId } = useParams();
 
     // try getting deck name from location state
     const location = useLocation();
-    const [deckName, setDeckName] = useState<string | null>(
-        location.state?.deckName || null,
-    );
+    const deckName = location.state?.deckName;
+    // const [deckName, setDeckName] = useState<string | null>(
+    //     location.state?.deckName || null,
+    // );
 
     // fall back to using API to get deck name if not stored in location state
     // i.e. hapens when user types URL directly instead of accessing page from dashboard
