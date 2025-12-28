@@ -3,7 +3,9 @@ from __future__ import annotations
 from typing import Any, Dict, List, Tuple
 
 
-def build_style_instructions(preferences: Dict[str, Any], weights: Dict[str, Any]) -> Tuple[str, List[str]]:
+def build_style_instructions(
+    preferences: Dict[str, Any], weights: Dict[str, Any]
+) -> Tuple[str, List[str]]:
     """
     Deterministic, safe prompt builder:
     we don't let the LLM invent arbitrary rules. We render from known keys.
@@ -18,10 +20,18 @@ def build_style_instructions(preferences: Dict[str, Any], weights: Dict[str, Any
     language = prefs.get("language", "en")
     difficulty = prefs.get("difficulty", "auto")
 
-    include_examples = bool(prefs.get("include_examples", True)) or (w.get("examples", 0.5) >= 0.5)
-    include_analogies = bool(prefs.get("include_analogies", False)) or (w.get("analogies", 0.5) >= 0.55)
-    step_by_step = bool(prefs.get("step_by_step", True)) or (w.get("step_by_step", 0.5) >= 0.55)
-    include_mnemonic = bool(prefs.get("include_mnemonic", False)) or (w.get("mnemonic", 0.5) >= 0.6)
+    include_examples = bool(prefs.get("include_examples", True)) or (
+        w.get("examples", 0.5) >= 0.5
+    )
+    include_analogies = bool(prefs.get("include_analogies", False)) or (
+        w.get("analogies", 0.5) >= 0.55
+    )
+    step_by_step = bool(prefs.get("step_by_step", True)) or (
+        w.get("step_by_step", 0.5) >= 0.55
+    )
+    include_mnemonic = bool(prefs.get("include_mnemonic", False)) or (
+        w.get("mnemonic", 0.5) >= 0.6
+    )
     quiz_at_end = bool(prefs.get("quiz_at_end", False)) or (w.get("quiz", 0.5) >= 0.6)
 
     if include_examples:
@@ -48,7 +58,9 @@ def build_style_instructions(preferences: Dict[str, Any], weights: Dict[str, Any
             "4) Common mistakes / pitfalls (optional)\n"
         )
     elif structure == "bullets":
-        structure_text = "Answer mainly as bullet points with a short definition at the top."
+        structure_text = (
+            "Answer mainly as bullet points with a short definition at the top."
+        )
     else:
         structure_text = "Answer as a short paragraph, then a compact bullet summary."
 
@@ -83,8 +95,7 @@ def build_style_instructions(preferences: Dict[str, Any], weights: Dict[str, Any
         f"Language: {language}\n"
         f"{length_text}\n"
         f"{difficulty_text}\n"
-        f"{structure_text}\n"
-        + ("\n".join(f"- {x}" for x in extras) if extras else "")
+        f"{structure_text}\n" + ("\n".join(f"- {x}" for x in extras) if extras else "")
     ).strip()
 
     return style, features_used

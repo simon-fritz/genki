@@ -2,22 +2,23 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
 
+
 # Using Django's default User model, no additional models needed
 def default_preferences():
     return {
-        "verbosity": "balanced",          # concise | balanced | detailed
-        "structure": "sections",          # sections | bullets | paragraph
+        "verbosity": "balanced",  # concise | balanced | detailed
+        "structure": "sections",  # sections | bullets | paragraph
         "include_examples": True,
         "examples_per_answer": 1,
         "include_analogies": False,
-        "analogy_domain": "coding",       # coding | everyday | math
+        "analogy_domain": "coding",  # coding | everyday | math
         "step_by_step": True,
         "socratic_mode": False,
         "include_mnemonic": False,
         "quiz_at_end": False,
         "language": "en",
-        "difficulty": "auto",             # auto | beginner | intermediate | advanced
-        "auto_tune": True,                # allow implicit tuning via reviews
+        "difficulty": "auto",  # auto | beginner | intermediate | advanced
+        "auto_tune": True,  # allow implicit tuning via reviews
     }
 
 

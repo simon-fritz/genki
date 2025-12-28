@@ -1,4 +1,5 @@
 """REST endpoints for decks and cards with basic spaced repetition."""
+
 from datetime import timedelta
 
 from django.utils import timezone
@@ -21,17 +22,18 @@ from accounts.services.preferences import update_profile_from_review
 
 class DeckViewSet(viewsets.ModelViewSet):
     """CRUD for decks scoped to the authenticated user."""
+
     serializer_class = DeckSerializer
     permission_classes = [IsAuthenticated]
-    swagger_schema_tags = ['Decks']
+    swagger_schema_tags = ["Decks"]
 
     def get_queryset(self):
         """Return only decks belonging to the current user, ordered by name."""
-        request = getattr(self, 'request', None)
-        if getattr(self, 'swagger_fake_view', False) or request is None:
+        request = getattr(self, "request", None)
+        if getattr(self, "swagger_fake_view", False) or request is None:
             return Deck.objects.none()
 
-        return Deck.objects.filter(user=request.user).order_by('name')
+        return Deck.objects.filter(user=request.user).order_by("name")
 
     def perform_create(self, serializer):
         """Automatically set the deck owner to the current user on creation."""
@@ -64,7 +66,7 @@ class DeckViewSet(viewsets.ModelViewSet):
             ),
         },
         operation_description=(
-                "Upload a PDF, split it into chunks, embed the content, and store vectors in Supabase."
+            "Upload a PDF, split it into chunks, embed the content, and store vectors in Supabase."
         ),
     )
     @action(
@@ -101,22 +103,23 @@ class DeckViewSet(viewsets.ModelViewSet):
 
 class CardViewSet(viewsets.ModelViewSet):
     """CRUD for the cards scoped to the authenticated user."""
+
     serializer_class = CardSerializer
     permission_classes = [IsAuthenticated]
-    swagger_schema_tags = ['Cards']
+    swagger_schema_tags = ["Cards"]
 
     def get_queryset(self):
         """Return cards for the current user, optionally filtered by deck."""
-        request = getattr(self, 'request', None)
-        if getattr(self, 'swagger_fake_view', False) or request is None:
+        request = getattr(self, "request", None)
+        if getattr(self, "swagger_fake_view", False) or request is None:
             return Card.objects.none()
 
         queryset = Card.objects.filter(owner=request.user).order_by(
-            'due_at', 'created_at'
+            "due_at", "created_at"
         )
 
         # Filter by deck if provided as a query parameter
-        deck_id = request.query_params.get('deck') if request else None
+        deck_id = request.query_params.get("deck") if request else None
         if deck_id:
             queryset = queryset.filter(deck_id=deck_id)
 
@@ -125,7 +128,7 @@ class CardViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(owner=self.request.user)
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=["get"])
     def due(self, request):
         """Return cards currently due for the requester."""
         cards = Card.objects.due_for_user(request.user)
@@ -133,34 +136,34 @@ class CardViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @swagger_auto_schema(
-        method='post',
+        method="post",
         request_body=CardReviewSerializer,
         responses={
             200: CardSerializer,
             400: openapi.Response(
-                description='Invalid rating payload',
+                description="Invalid rating payload",
                 schema=openapi.Schema(
                     type=openapi.TYPE_OBJECT,
                     properties={
-                        'rating': openapi.Schema(
+                        "rating": openapi.Schema(
                             type=openapi.TYPE_ARRAY,
-                            items=openapi.Schema(type=openapi.TYPE_STRING)
+                            items=openapi.Schema(type=openapi.TYPE_STRING),
                         ),
-                        'detail': openapi.Schema(type=openapi.TYPE_STRING),
-                    }
-                )
+                        "detail": openapi.Schema(type=openapi.TYPE_STRING),
+                    },
+                ),
             ),
         },
-        operation_description='Submit a 0-3 spaced repetition rating for this card.',
+        operation_description="Submit a 0-3 spaced repetition rating for this card.",
     )
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=["post"])
     def review(self, request, pk=None):
         """Handle POST /api/cards/{id}/review/ with rating 0-3."""
         card = self.get_object()
 
         input_serializer = CardReviewSerializer(data=request.data)
         input_serializer.is_valid(raise_exception=True)
-        rating = input_serializer.validated_data['rating']
+        rating = input_serializer.validated_data["rating"]
 
         # ===== Simplified SM-2 Algorithm Implementation =====
         # Adjust these parameters based on your learning goals
@@ -180,17 +183,14 @@ class CardViewSet(viewsets.ModelViewSet):
                 card.interval = 3  # second review: 3 days
             else:
                 # Subsequent reviews: use ease_factor to space out intervals
-                card.interval = max(
-                    1,
-                    int(card.interval * card.ease_factor)
-                )
+                card.interval = max(1, int(card.interval * card.ease_factor))
 
         # Update ease_factor based on rating (SM-2 formula)
         # EF' = EF + (0.1 - (5 - rating) * (0.08 + (5 - rating) * 0.02))
         if rating >= 2:
             card.ease_factor = max(
                 1.3,  # minimum ease factor
-                card.ease_factor + (0.1 - (5 - rating) * (0.08 + (5 - rating) * 0.02))
+                card.ease_factor + (0.1 - (5 - rating) * (0.08 + (5 - rating) * 0.02)),
             )
         else:
             card.ease_factor = max(1.3, card.ease_factor - 0.2)

@@ -4,7 +4,6 @@ import django.utils.timezone
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("cards", "0001_initial"),
     ]

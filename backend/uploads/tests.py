@@ -105,24 +105,31 @@ class DocumentIngestionTests(SimpleTestCase):
         mock_page.extract_text.return_value = ""
         mock_reader = MagicMock(pages=[mock_page])
 
-        with patch("uploads.services.document_ingestion.PdfReader", return_value=mock_reader):
+        with patch(
+            "uploads.services.document_ingestion.PdfReader", return_value=mock_reader
+        ):
             with self.assertRaises(DocumentIngestionError):
                 document_ingestion._extract_pdf_text(BytesIO(b"data"))
 
     def test_ingest_document_raises_when_no_chunks_created(self):
         deck = SimpleNamespace(id=1, name="Deck", user_id=2)
 
-        with patch(
-            "uploads.services.document_ingestion._extract_pdf_text",
-            return_value="some text",
-        ) as mock_extract, patch(
-            "uploads.services.document_ingestion._split_text",
-            return_value=[],
-        ) as mock_split, patch(
-            "uploads.services.document_ingestion._build_embedding_model"
-        ) as mock_embed, patch(
-            "uploads.services.document_ingestion._build_supabase_client"
-        ) as mock_client:
+        with (
+            patch(
+                "uploads.services.document_ingestion._extract_pdf_text",
+                return_value="some text",
+            ) as mock_extract,
+            patch(
+                "uploads.services.document_ingestion._split_text",
+                return_value=[],
+            ) as mock_split,
+            patch(
+                "uploads.services.document_ingestion._build_embedding_model"
+            ) as mock_embed,
+            patch(
+                "uploads.services.document_ingestion._build_supabase_client"
+            ) as mock_client,
+        ):
             with self.assertRaises(DocumentIngestionError):
                 ingest_document(deck, BytesIO(b"data"))
 
@@ -140,22 +147,30 @@ class DocumentIngestionTests(SimpleTestCase):
         embedding_model = object()
         supabase_client = object()
 
-        with override_settings(GEMINI_API_KEY="key", SUPABASE_URL="url", SUPABASE_KEY="key"):
-            with patch(
-                "uploads.services.document_ingestion._extract_pdf_text",
-                return_value="some text",
-            ), patch(
-                "uploads.services.document_ingestion._split_text",
-                return_value=chunks,
-            ), patch(
-                "uploads.services.document_ingestion._build_embedding_model",
-                return_value=embedding_model,
-            ), patch(
-                "uploads.services.document_ingestion._build_supabase_client",
-                return_value=supabase_client,
-            ), patch(
-                "uploads.services.document_ingestion.SupabaseVectorStore.from_documents"
-            ) as mock_from_documents:
+        with override_settings(
+            GEMINI_API_KEY="key", SUPABASE_URL="url", SUPABASE_KEY="key"
+        ):
+            with (
+                patch(
+                    "uploads.services.document_ingestion._extract_pdf_text",
+                    return_value="some text",
+                ),
+                patch(
+                    "uploads.services.document_ingestion._split_text",
+                    return_value=chunks,
+                ),
+                patch(
+                    "uploads.services.document_ingestion._build_embedding_model",
+                    return_value=embedding_model,
+                ),
+                patch(
+                    "uploads.services.document_ingestion._build_supabase_client",
+                    return_value=supabase_client,
+                ),
+                patch(
+                    "uploads.services.document_ingestion.SupabaseVectorStore.from_documents"
+                ) as mock_from_documents,
+            ):
                 count = ingest_document(deck, uploaded_file)
 
         self.assertEqual(count, len(chunks))

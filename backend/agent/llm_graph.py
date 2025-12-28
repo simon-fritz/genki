@@ -22,7 +22,7 @@ llm = ChatGoogleGenerativeAI(
     model="gemini-2.0-flash",
     temperature=0.3,
     google_api_key=settings.GEMINI_API_KEY,
-    convert_system_message_to_human=True
+    convert_system_message_to_human=True,
 )
 
 # Bind tools to the LLM for the ReAct Agent
@@ -31,6 +31,7 @@ llm_with_tools = llm.bind_tools(tools)
 
 
 # --- Nodes ---
+
 
 def context_builder_node(state: AgentState):
     user_prefs = {}
@@ -66,19 +67,23 @@ def context_builder_node(state: AgentState):
 
 def guardrail_node(state: AgentState):
     """
-    Checks for safety. 
+    Checks for safety.
     """
-    prompt = ChatPromptTemplate.from_messages([
-        ("system",
-         "You are a content safety filter. Check if the text is safe. Return JSON: {{'allowed': bool, 'reason': str}}"),
-        ("human", "{text}")
-    ])
+    prompt = ChatPromptTemplate.from_messages(
+        [
+            (
+                "system",
+                "You are a content safety filter. Check if the text is safe. Return JSON: {{'allowed': bool, 'reason': str}}",
+            ),
+            ("human", "{text}"),
+        ]
+    )
     chain = prompt | llm | JsonOutputParser()
     result = chain.invoke({"text": state["front"]})
 
     return {
         "is_safe": result.get("allowed", False),
-        "safety_reason": result.get("reason", "Unknown")
+        "safety_reason": result.get("reason", "Unknown"),
     }
 
 
@@ -127,10 +132,10 @@ def tool_node(state: AgentState):
             res = web_search_tool.invoke(tool_args)
         else:
             res = "Tool not found."
-        
+
         if rag_was_used:
             new_meta["rag_used"] = True
-    
+
         results.append(
             ToolMessage(
                 tool_call_id=tool_call["id"],
@@ -172,7 +177,9 @@ def critic_node(state: AgentState):
         # Inject feedback back into conversation so Agent can fix it
         return {
             "critique_count": state["critique_count"] + 1,
-            "messages": [HumanMessage(content=f"Refine the answer. Feedback: {feedback}")]
+            "messages": [
+                HumanMessage(content=f"Refine the answer. Feedback: {feedback}")
+            ],
         }
 
 
@@ -192,6 +199,7 @@ def formatter_node(state: AgentState):
 
 
 # --- Conditional Edges ---
+
 
 def route_guardrail(state: AgentState) -> Literal["agent", "end_unsafe"]:
     return "agent" if state["is_safe"] else "end_unsafe"
@@ -232,22 +240,19 @@ workflow.add_node("formatter", formatter_node)
 # Flow
 workflow.set_entry_point("context_builder")
 workflow.add_edge("context_builder", "guardrail")
-workflow.add_conditional_edges("guardrail", route_guardrail, {
-    "agent": "agent",
-    "end_unsafe": END
-})
+workflow.add_conditional_edges(
+    "guardrail", route_guardrail, {"agent": "agent", "end_unsafe": END}
+)
 
-workflow.add_conditional_edges("agent", route_agent, {
-    "tools": "tools",
-    "generator": "generator"
-})
+workflow.add_conditional_edges(
+    "agent", route_agent, {"tools": "tools", "generator": "generator"}
+)
 workflow.add_edge("tools", "agent")
 
 workflow.add_edge("generator", "critic")
-workflow.add_conditional_edges("critic", route_critic, {
-    "agent": "agent",
-    "formatter": "formatter"
-})
+workflow.add_conditional_edges(
+    "critic", route_critic, {"agent": "agent", "formatter": "formatter"}
+)
 workflow.add_edge("formatter", END)
 
 # Compile

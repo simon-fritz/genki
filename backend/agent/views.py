@@ -9,7 +9,6 @@ from langchain_core.prompts import ChatPromptTemplate
 from .serializers import FlashcardRequestSerializer, FlashcardResponseSerializer
 
 
-
 from cards.models import Deck
 
 from .llm_graph import app, llm
@@ -18,6 +17,7 @@ from .state import AgentState
 
 class RapidFlashcardRequestSerializer(serializers.Serializer):
     front = serializers.CharField()
+
 
 class FlashcardBacksideView(APIView):
     permission_classes = [IsAuthenticated]
@@ -67,12 +67,12 @@ class FlashcardBacksideView(APIView):
         },
         security=[{"Bearer": []}],
         operation_description=(
-                "Generate the backside of an Anki card.\n\n"
-                "Pipeline:\n"
-                "- Loads user's learning preferences\n"
-                "- Uses RAG (search_deck_documents) scoped to deck_id\n"
-                "- Generates a personalized answer\n\n"
-                "Returns generation_meta so you can store it on the Card and later auto-tune preferences."
+            "Generate the backside of an Anki card.\n\n"
+            "Pipeline:\n"
+            "- Loads user's learning preferences\n"
+            "- Uses RAG (search_deck_documents) scoped to deck_id\n"
+            "- Generates a personalized answer\n\n"
+            "Returns generation_meta so you can store it on the Card and later auto-tune preferences."
         ),
         tags=["GenAI"],
     )
@@ -96,7 +96,9 @@ class FlashcardBacksideView(APIView):
         # Ensure deck belongs to user
         deck = Deck.objects.filter(id=deck_id, user=request.user).first()
         if not deck:
-            return Response({"error": "Deck not found"}, status=status.HTTP_404_NOT_FOUND)
+            return Response(
+                {"error": "Deck not found"}, status=status.HTTP_404_NOT_FOUND
+            )
 
         # Initialize State
         initial_state: AgentState = {
@@ -115,7 +117,7 @@ class FlashcardBacksideView(APIView):
             "style_instructions": "",
             "features_used": [],
             "generation_meta": {},
-            "final_json": {}
+            "final_json": {},
         }
 
         try:
@@ -125,8 +127,11 @@ class FlashcardBacksideView(APIView):
             # Check for Safety Rejection
             if not final_state["is_safe"]:
                 return Response(
-                    {"error": "Content Blocked", "reason": final_state["safety_reason"]},
-                    status=status.HTTP_400_BAD_REQUEST
+                    {
+                        "error": "Content Blocked",
+                        "reason": final_state["safety_reason"],
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
                 )
 
             # Return final formatted JSON
@@ -135,8 +140,10 @@ class FlashcardBacksideView(APIView):
         except Exception as e:
             return Response(
                 {"error": "Agent Failed", "details": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
+
+
 class RapidFlashcardBacksideView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -149,17 +156,21 @@ class RapidFlashcardBacksideView(APIView):
         front_text = data["front"].strip()
 
         if not front_text:
-            return Response({"error": "Front cannot be empty."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "Front cannot be empty."}, status=status.HTTP_400_BAD_REQUEST
+            )
 
-        prompt = ChatPromptTemplate.from_messages([
-            (
-                "system",
-                "You write only the back side of a flashcard as compact Markdown (<=120 words)."
-                " Use bullet points or short paragraphs. Avoid headings, front-matter, and code fences."
-                " Output ONLY the back text, nothing else."
-            ),
-            ("human", "Front: {front}")
-        ])
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    "You write only the back side of a flashcard as compact Markdown (<=120 words)."
+                    " Use bullet points or short paragraphs. Avoid headings, front-matter, and code fences."
+                    " Output ONLY the back text, nothing else.",
+                ),
+                ("human", "Front: {front}"),
+            ]
+        )
 
         try:
             back_text = prompt | llm
@@ -173,5 +184,5 @@ class RapidFlashcardBacksideView(APIView):
         except Exception as e:
             return Response(
                 {"error": "Generation Failed", "details": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )   
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )

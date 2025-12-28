@@ -1,4 +1,5 @@
 """Utilities for ingesting deck documents into Supabase vectors."""
+
 from __future__ import annotations
 
 import logging
@@ -41,7 +42,6 @@ def _build_embedding_model() -> GoogleGenerativeAIEmbeddings:
         task_type="RETRIEVAL_DOCUMENT",
         google_api_key=api_key,
     )
-
 
 
 def _extract_pdf_text(uploaded_file) -> str:

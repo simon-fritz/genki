@@ -4,15 +4,14 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('cards', '0004_alter_card_back_alter_card_ease_factor_and_more'),
+        ("cards", "0004_alter_card_back_alter_card_ease_factor_and_more"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='card',
-            name='generation_meta',
+            model_name="card",
+            name="generation_meta",
             field=models.JSONField(blank=True, default=dict),
         ),
     ]
