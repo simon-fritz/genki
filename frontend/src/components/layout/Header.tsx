@@ -1,5 +1,13 @@
-import { SlidersHorizontal, User } from "lucide-react";
+import { SlidersHorizontal, User, LogOut } from "lucide-react";
 import { useNavigate } from "react-router";
+import { getAccessToken, clearTokens } from "@/api/client";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
 
 const Header = () => {
     const navigate = useNavigate();
@@ -12,28 +20,45 @@ const Header = () => {
                     navigate("/");
                 }}
             >
-                <img 
-                    src="/logo.png" 
-                    alt="Anki GenAI Logo" 
+                <img
+                    src="/logo.png"
+                    alt="Anki GenAI Logo"
                     className="h-14 w-auto"
                 />
                 <p className="text-2xl font-bold text-gray-900">GenKi</p>
             </div>
             {/* user and settings */}
-            <div className="my-1 ml-auto flex">
-                <SlidersHorizontal
-                    onClick={() => {
-                        navigate("/settings");
-                    }}
-                    className="mx-1 h-7 w-7"
-                />
-                <User
-                    onClick={() => navigate('/login')}
-                    className="ml-1 h-7 w-7 cursor-pointer"
-                    role="button"
-                    aria-label="Account"
-                />
-            </div>
+            {getAccessToken() ? (
+                <div className="my-1 ml-auto flex">
+                    <SlidersHorizontal
+                        onClick={() => {
+                            navigate("/settings");
+                        }}
+                        className="mx-1 h-7 w-7"
+                    />
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <User
+                                className="ml-1 h-7 w-7 cursor-pointer"
+                                role="button"
+                                aria-label="Account"
+                            />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                                onSelect={() => {
+                                    clearTokens();
+                                    toast.success("Logged out successfully");
+                                    navigate("/login");
+                                }}
+                            >
+                                <LogOut className="mr-2 h-4 w-4" />
+                                <span>Log out</span>
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            ) : null}
         </div>
     );
 };
