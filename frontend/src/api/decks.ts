@@ -96,3 +96,30 @@ export async function updateDeck(
 export async function deleteDeck(deckId: string): Promise<void> {
     await api.delete(`/decks/${deckId}/`);
 }
+
+/* Upload a document for RAG pipeline to a specific deck
+ */
+interface UploadDocumentResponse {
+    deck: number;
+    filename: string;
+    chunks_ingested: number;
+}
+
+export async function uploadDocument(
+    deckId: string,
+    file: File,
+): Promise<UploadDocumentResponse> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await api.post<UploadDocumentResponse>(
+        `/decks/${deckId}/upload-document/`,
+        formData,
+        {
+            headers: {
+                "Content-Type": "multipart/form-data",
+            },
+        },
+    );
+    return response.data;
+}

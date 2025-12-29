@@ -17,10 +17,10 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { RagUpload } from "../settings/RagUpload";
-import DeckEditDialog from "./DeckEditDialog";
+import { RagUpload } from "@/components/dashboard/RagUpload";
+import DeckEditDialog from "@/components/dashboard/DeckEditDialog";
 import type { Deck } from "@/api/decks";
-import DeckDeleteDialog from "./DeckDeleteDialog";
+import DeckDeleteDialog from "@/components/dashboard/DeckDeleteDialog";
 
 interface DeckDropdownMenuProps {
     deck: Deck;
@@ -30,6 +30,7 @@ interface DeckDropdownMenuProps {
 const DeckDropdownMenu = ({ deck, onDeckUpdated }: DeckDropdownMenuProps) => {
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
     const navigate = useNavigate();
     return (
         <>
@@ -45,6 +46,12 @@ const DeckDropdownMenu = ({ deck, onDeckUpdated }: DeckDropdownMenuProps) => {
                 open={deleteDialogOpen}
                 onOpenChange={setDeleteDialogOpen}
                 onSuccess={onDeckUpdated}
+            />
+            <RagUpload
+                deckId={deck.id}
+                deckName={deck.name}
+                open={uploadDialogOpen}
+                onOpenChange={setUploadDialogOpen}
             />
             <DropdownMenu>
                 {/* asChild tells DropdownMenuTrigger to use its direct child (the Button)*/}
@@ -105,9 +112,11 @@ const DeckDropdownMenu = ({ deck, onDeckUpdated }: DeckDropdownMenuProps) => {
                         <span>Customize learning</span>
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <DropdownMenuItem
+                        onSelect={() => setUploadDialogOpen(true)}
+                    >
                         <Upload className="mr-2 h-4 w-4" />
-                        <RagUpload isMenuItem={true} />
+                        <span>Upload PDF</span>
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
