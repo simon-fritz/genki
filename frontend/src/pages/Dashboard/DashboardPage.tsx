@@ -1,5 +1,5 @@
 import DeckButton from "@/components/dashboard/DeckButton";
-import CreateDeckButton from "@/components/dashboard/CreateDeckButton";
+import CreateDeckDialog from "@/components/dashboard/CreateDeckDialog";
 import { BookOpen } from "lucide-react";
 import { getDecks } from "@/api/decks";
 import type { Deck } from "@/api/decks";
@@ -8,8 +8,12 @@ import { useState, useEffect } from "react";
 const DashboardPage = () => {
     const [decksFetched, setDecksFetched] = useState<Deck[]>([]);
 
-    useEffect(() => {
+    const fetchDecks = () => {
         getDecks().then((data) => setDecksFetched(data));
+    };
+
+    useEffect(() => {
+        fetchDecks();
     }, []);
 
     // set new, learn, due to 0 for now because not provided by api
@@ -19,8 +23,6 @@ const DashboardPage = () => {
         cardsLearn: 0,
         cardsDue: 0,
     }));
-
-    console.log(`Decks:\n${decks}`);
 
     return (
         <div className="min-h-screen">
@@ -48,26 +50,23 @@ const DashboardPage = () => {
 
                 {/* Create Deck Button */}
                 <div className="mb-8">
-                    <CreateDeckButton />
+                    <CreateDeckDialog onDeckCreated={fetchDecks} />
                 </div>
 
                 {/* Decks Section */}
                 {decks.length > 0 && (
                     <div>
                         {/* header row with labels */}
-                        <div className="hidden md:flex justify-between items-center text-sm font-semibold text-gray-600 mb-3 px-4 uppercase tracking-wider">
+                        <div className="hidden md:flex justify-between items-center text-sm font-medium text-gray-500 mb-2 border-b pb-1 my-2">
                             <span className="flex-1">Deck Name</span>
-                            <div className="flex items-center space-x-2 text-sm font-semibold">
-                                <span className="min-w-6 text-right text-blue-600">
-                                    New
-                                </span>
-                                <span className="min-w-6 text-right text-red-600">
+                            <div className="flex items-center space-x-4 ml-4">
+                                <span className="min-w-6 text-right">New</span>
+                                <span className="min-w-6 text-right">
                                     Learn
                                 </span>
-                                <span className="min-w-6 text-right text-green-600">
-                                    Due
-                                </span>
-                                <span className="w-9"></span>
+                                <span className="min-w-6 text-right">Due</span>
+                                <span className="w-9 ml-2"></span>
+                                {/* Placeholder for the dropdown menu icon */}
                             </div>
                         </div>
 
