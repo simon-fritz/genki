@@ -6,9 +6,9 @@ from rest_framework import status
 
 from cards.models import Deck
 from accounts.models import UserProfile
-from .prompting import build_style_instructions
-from .state import AgentState
-from .tools import search_deck_documents
+from agent.prompting import build_style_instructions
+from agent.state import AgentState
+from agent.tools import search_deck_documents
 
 
 class PromptingTests(TestCase):
@@ -130,7 +130,7 @@ class RapidFlashcardViewTests(APITestCase):
         mock_llm.__or__ = lambda self, other: MagicMock(invoke=lambda x: mock_response)
 
         response = self.client.post(
-            "/api/agent/flashcard/backside/rapid/", {"front": "What is AI?"}
+            "/api/agent/flashcard/rapid/backside/", {"front": "What is AI?"}
         )
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)

@@ -345,7 +345,7 @@ def test_api_endpoint():
         print("  Testing rapid endpoint...")
         start = time.time()
         response = client.post(
-            "/api/agent/flashcard/backside/rapid/",
+            "/api/agent/flashcard/rapid/backside",
             {"front": "What is a variable in programming?"},
             format="json",
         )

@@ -39,3 +39,46 @@ Genki helps you create great flashcards fast, whether you start with your own ma
 
 - [frontend/](frontend) — React app source, components, pages, and API hooks.
 - [backend/](backend) — Django project with apps for accounts, cards, uploads, and the agent pipeline.
+
+---
+
+## Run with Docker Compose (recommended for local development)
+
+This repo includes a Docker-based dev setup that runs:
+
+- **Django backend** (port `8000`)
+- **One-shot migrations service** (runs `python manage.py migrate --noinput`)
+- **React/Vite frontend** (port `5173`)
+
+### Prerequisites
+
+- Docker + Docker Compose (Docker Desktop is fine)
+
+### 1) Create your environment file
+
+Create `backend/.env` (or copy from an example if available) and set required keys, for example:
+
+```env
+DEBUG=true
+DJANGO_SECRET_KEY=change-me
+ALLOWED_HOSTS=localhost,127.0.0.1,backend,genki-backend
+
+GEMINI_API_KEY=...
+SUPABASE_URL=...
+SUPABASE_KEY=...
+SUPABASE_VECTOR_TABLE=documents
+SUPABASE_QUERY_NAME=match_documents
+TAVILY_API_KEY=...
+```
+
+Create `frontend/.env` (or copy from an example if available) and set required keys, for example:
+```env
+VITE_API_BASE_URL=/api
+```
+
+### 2) Start the services
+From the repo root, run:
+
+```bash
+docker compose -f compose.dev.yml up -d --build
+```

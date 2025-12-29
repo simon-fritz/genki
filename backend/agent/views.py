@@ -188,7 +188,7 @@ class RapidFlashcardBacksideView(APIView):
         try:
             back_text = prompt | llm
             response = back_text.invoke({"front": front_text})
-            back_markdown = getattr(response, "content", str(response))
+            back_markdown = str(getattr(response, "content", response))
 
             return Response(
                 {"front": front_text, "back": back_markdown},

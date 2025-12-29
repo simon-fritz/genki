@@ -8,13 +8,13 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import React, { useState } from "react";
-import { useNavigate, useLocation } from "react-router";
+import { useNavigate} from "react-router";
 import { login as loginApi } from "@/api/auth";
 import { toast } from "sonner";
 
 function LoginPage() {
     const navigate = useNavigate();
-    const location = useLocation();
+    //const location = useLocation();
 
     const [usernameOrEmail, setUsernameOrEmail] = useState<string>("");
     const [password, setPassword] = useState<string>("");

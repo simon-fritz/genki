@@ -1,5 +1,4 @@
 import { Button } from "@/components/ui/button";
-import { MoreVertical } from "lucide-react";
 import DeckDropdownMenu from "./DeckDropdownMenu";
 
 interface DeckButtonProps {

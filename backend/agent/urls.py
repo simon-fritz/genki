@@ -20,10 +20,20 @@ urlpatterns = [
         FlashcardBacksideRevisionView.as_view(),
         name="flashcard-backside-revision",
     ),
+path(
+        "flashcard/rapid/backside",
+        RapidFlashcardBacksideView.as_view(),
+        name="flashcard-backside-rapid-noslash",
+    ),
     path(
         "flashcard/rapid/backside/",
         RapidFlashcardBacksideView.as_view(),
         name="flashcard-backside-rapid",
+    ),
+    path(
+        "flashcard/rapid/backside/revise",
+        RapidFlashcardBacksideRevisionView.as_view(),
+        name="flashcard-backside-rapid-revision-noslash",
     ),
     path(
         "flashcard/rapid/backside/revise/",
