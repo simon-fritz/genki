@@ -40,6 +40,22 @@ export async function getDecks(): Promise<Deck[]> {
     return decks;
 }
 
+/* Get info about an existing deck from backend
+ */
+export async function getDeck(deckId: string): Promise<Deck> {
+    const response = await api.get<DeckRaw>(`/decks/${deckId}/`);
+    // make the returned data conform to the Deck interface
+    const deckRaw: DeckRaw = response.data;
+    const deck: Deck = {
+        id: deckRaw.id.toString(),
+        name: deckRaw.name,
+        description: deckRaw.description,
+        created_at: new Date(deckRaw.created_at),
+        updated_at: new Date(deckRaw.updated_at),
+    };
+    return deck;
+}
+
 /* Create a new deck on the backend
  */
 export async function createDeck(deckData: DeckToCreate): Promise<Deck> {
