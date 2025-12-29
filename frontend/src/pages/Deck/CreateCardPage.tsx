@@ -68,7 +68,8 @@ const CreateCardPage = () => {
                 </div>
                 <p className="text-gray-500 text-xs mt-1">
                     <span className="inline-flex items-center gap-1">
-                        Card will be saved to {deckName || <Spinner />}
+                        Card will be saved to deck{" "}
+                        {deckName ? `"${deckName}"` : <Spinner />}
                     </span>
                 </p>
             </div>

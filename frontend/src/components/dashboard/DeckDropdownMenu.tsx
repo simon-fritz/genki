@@ -20,6 +20,7 @@ import {
 import { RagUpload } from "../settings/RagUpload";
 import DeckEditDialog from "./DeckEditDialog";
 import type { Deck } from "@/api/decks";
+import DeckDeleteDialog from "./DeckDeleteDialog";
 
 interface DeckDropdownMenuProps {
     deck: Deck;
@@ -28,6 +29,7 @@ interface DeckDropdownMenuProps {
 
 const DeckDropdownMenu = ({ deck, onDeckUpdated }: DeckDropdownMenuProps) => {
     const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const navigate = useNavigate();
     return (
         <>
@@ -36,6 +38,12 @@ const DeckDropdownMenu = ({ deck, onDeckUpdated }: DeckDropdownMenuProps) => {
                 deck={deck}
                 open={editDialogOpen}
                 onOpenChange={setEditDialogOpen}
+                onSuccess={onDeckUpdated}
+            />
+            <DeckDeleteDialog
+                deck={deck}
+                open={deleteDialogOpen}
+                onOpenChange={setDeleteDialogOpen}
                 onSuccess={onDeckUpdated}
             />
             <DropdownMenu>
@@ -70,7 +78,9 @@ const DeckDropdownMenu = ({ deck, onDeckUpdated }: DeckDropdownMenuProps) => {
                         <span>Edit deck details</span>
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem>
+                    <DropdownMenuItem
+                        onSelect={() => setDeleteDialogOpen(true)}
+                    >
                         <Trash className="mr-2 h-4 w-4" />
                         <span>Delete deck</span>
                     </DropdownMenuItem>

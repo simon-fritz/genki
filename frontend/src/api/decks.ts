@@ -90,3 +90,9 @@ export async function updateDeck(
     };
     return updatedDeck;
 }
+
+/* Delete an existing deck
+ */
+export async function deleteDeck(deckId: string): Promise<void> {
+    await api.delete(`/decks/${deckId}/`);
+}
