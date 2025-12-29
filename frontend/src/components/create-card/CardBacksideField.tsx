@@ -3,19 +3,36 @@ import { ThumbsUp, RefreshCw, MessageSquare, Bot, BotOff } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { SubtleButton } from "@/components/create-card/SubtleButton";
+import { Spinner } from "@/components/ui/spinner";
 
-const CardBacksideField = () => {
+interface CardBacksideFieldProps {
+    value: string;
+    onChange: (value: string) => void;
+    isGenerating?: boolean;
+}
+
+const CardBacksideField = ({
+    value,
+    onChange,
+    isGenerating = false,
+}: CardBacksideFieldProps) => {
     const [completionsEnabled, setCompletionsEnabled] = useState(true);
 
     return (
-        <FieldGroup className="my-2">
+        <FieldGroup>
             <Field>
-                <FieldLabel>Back of the card</FieldLabel>
+                <FieldLabel className="flex items-center gap-2">
+                    Back of the card
+                    {isGenerating && <Spinner />}
+                </FieldLabel>
                 <Textarea
-                    className="h-48 mt-2 mb-2"
+                    className="h-48"
                     placeholder="The answer or definition will be generated here"
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    disabled={isGenerating}
                 />
-                <div className="flex justify-between">
+                <div className="flex justify-between -mt-2">
                     <SubtleButton
                         icon={completionsEnabled ? Bot : BotOff}
                         text={

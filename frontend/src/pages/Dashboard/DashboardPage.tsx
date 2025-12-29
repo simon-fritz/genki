@@ -4,13 +4,28 @@ import CreateDeckButton from "@/components/dashboard/CreateDeckButton";
 import { BookOpen } from "lucide-react";
 import { getDecks } from "@/api/decks";
 import type { Deck } from "@/api/decks";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { toast } from "sonner";
 
 const DashboardPage = () => {
     const [decksFetched, setDecksFetched] = useState<Deck[]>([]);
+    const [fetchError, setFetchError] = useState(false);
+    const errorToastShown = useRef(false);
 
     const fetchDecks = () => {
-        getDecks().then((data) => setDecksFetched(data));
+        getDecks()
+            .then((data) => {
+                setDecksFetched(data);
+                setFetchError(false);
+                errorToastShown.current = false;
+            })
+            .catch(() => {
+                setFetchError(true);
+                if (!errorToastShown.current) {
+                    errorToastShown.current = true;
+                    toast.error("Failed to fetch decks. Please try again.");
+                }
+            });
     };
 
     useEffect(() => {
@@ -41,8 +56,16 @@ const DashboardPage = () => {
                     </p>
                 </div>
 
+                {/* Error message when fetching decks fails */}
+                {fetchError && (
+                    <div className="text-center text-red-500 my-3">
+                        There was an error fetching your decks. Please refresh
+                        the page to try again.
+                    </div>
+                )}
+
                 {/* Prompt user to create decks if they don't have any */}
-                {decks.length === 0 && (
+                {!fetchError && decks.length === 0 && (
                     <div className="text-center text-gray-500 my-3">
                         You don't have any decks yet. Create your first using
                         the button below!
@@ -50,13 +73,15 @@ const DashboardPage = () => {
                 )}
 
                 {/* Create Deck Button */}
-                <div className="mb-8">
-                    <DeckEditDialog
-                        mode="create"
-                        trigger={<CreateDeckButton />}
-                        onSuccess={fetchDecks}
-                    />
-                </div>
+                {!fetchError && (
+                    <div className="mb-8">
+                        <DeckEditDialog
+                            mode="create"
+                            trigger={<CreateDeckButton />}
+                            onSuccess={fetchDecks}
+                        />
+                    </div>
+                )}
 
                 {/* Decks Section */}
                 {decks.length > 0 && (

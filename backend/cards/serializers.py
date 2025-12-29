@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Deck, Card
+
+from .models import Card, Deck
 
 
 class DeckSerializer(serializers.ModelSerializer):
@@ -36,7 +37,17 @@ class CardSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "created_at", "updated_at"]
+        read_only_fields = [
+            "id",
+            "generation_meta",
+            "created_at",
+            "updated_at",
+            "due_at",
+            "interval",
+            "ease_factor",
+            "repetitions",
+            "lapses",
+        ]
 
     def validate_generation_meta(self, meta):
         if meta is None:

@@ -4,8 +4,11 @@ import CardFrontsideField from "@/components/create-card/CardFrontsideField";
 import CardBacksideField from "@/components/create-card/CardBacksideField";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import ExitConfirmationDialog from "@/components/create-card/ExitConfirmationDialog";
 import { useState, useEffect } from "react";
 import { getDeck } from "@/api/decks.ts";
+import { getBacksideRapid } from "@/api/agent";
+import { createCard } from "@/api/cards";
 import { toast } from "sonner";
 
 const CreateCardPage = () => {
@@ -19,6 +22,77 @@ const CreateCardPage = () => {
     const [deckName, setDeckName] = useState<string | null>(
         location.state?.deckName || null,
     );
+
+    // Card content state
+    const [front, setFront] = useState("");
+    const [back, setBack] = useState("");
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [showExitDialog, setShowExitDialog] = useState(false);
+
+    const handleGenerateBackside = async () => {
+        if (!front.trim()) {
+            toast.error("Please enter the front of the card first.");
+            return;
+        }
+        setIsGenerating(true);
+        try {
+            const response = await getBacksideRapid({ front });
+            setBack(response.back);
+        } catch {
+            toast.error("Failed to generate backside. Please try again.");
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const handleDoneClick = () => {
+        if (front.trim() && back.trim()) {
+            setShowExitDialog(true);
+        } else {
+            navigate("/");
+        }
+    };
+
+    const handleSaveAndExit = async () => {
+        if (!deckId) {
+            toast.error("No deck selected.");
+            return;
+        }
+        setIsSaving(true);
+        try {
+            await createCard({ deck: deckId, front, back });
+            toast.success("Card saved successfully!");
+            setShowExitDialog(false);
+            navigate("/");
+        } catch {
+            toast.error("Failed to save the card. Please try again.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    const handleAddAndContinue = async () => {
+        if (!front.trim() || !back.trim()) {
+            toast.error("Please fill in both the front and back of the card.");
+            return;
+        }
+        if (!deckId) {
+            toast.error("No deck selected.");
+            return;
+        }
+        setIsSaving(true);
+        try {
+            await createCard({ deck: deckId, front, back });
+            toast.success("Card added successfully!");
+            setFront("");
+            setBack("");
+        } catch {
+            toast.error("The card could not be saved due to an error.");
+        } finally {
+            setIsSaving(false);
+        }
+    };
 
     // fall back to using API to get deck name if not stored in location state
     // i.e. happens when user types URL directly instead of accessing page from dashboard
@@ -49,20 +123,27 @@ const CreateCardPage = () => {
 
     return (
         <div>
-            <CardFrontsideField />
-            <CardBacksideField />
+            <CardFrontsideField
+                value={front}
+                onChange={setFront}
+                onSubmit={handleGenerateBackside}
+            />
+            <CardBacksideField
+                value={back}
+                onChange={setBack}
+                isGenerating={isGenerating}
+            />
             <div className="flex flex-col items-end mt-4">
                 <div className="flex gap-2">
-                    <Button
-                        variant="outline"
-                        onClick={() => {
-                            navigate("/");
-                        }}
-                    >
+                    <Button variant="outline" onClick={handleDoneClick}>
                         Done
                     </Button>
-                    <Button>
-                        <Plus className="h-4 w-4 mr-1" />
+                    <Button onClick={handleAddAndContinue} disabled={isSaving}>
+                        {isSaving ? (
+                            <Spinner className="h-4 w-4 mr-1" />
+                        ) : (
+                            <Plus className="h-4 w-4 mr-1" />
+                        )}
                         Add and continue
                     </Button>
                 </div>
@@ -73,6 +154,19 @@ const CreateCardPage = () => {
                     </span>
                 </p>
             </div>
+
+            <ExitConfirmationDialog
+                open={showExitDialog}
+                onOpenChange={setShowExitDialog}
+                onKeepEditing={() => setShowExitDialog(false)}
+                onExitWithoutSaving={() => {
+                    setShowExitDialog(false);
+                    toast("Card discarded");
+                    navigate("/");
+                }}
+                onSaveAndExit={handleSaveAndExit}
+                isSaving={isSaving}
+            />
         </div>
     );
 };
