@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     Dialog,
     DialogContent,
@@ -15,12 +16,14 @@ import { Label } from "@/components/ui/label";
 import CreateDeckButton from "./CreateDeckButton";
 import { createDeck } from "@/api/decks";
 import { toast } from "sonner";
+import axios from "axios";
 
 interface CreateDeckDialogProps {
     onDeckCreated?: () => void;
 }
 
 const CreateDeckDialog = ({ onDeckCreated }: CreateDeckDialogProps) => {
+    const navigate = useNavigate();
     const [open, setOpen] = useState(false);
     const [name, setName] = useState("");
     const [description, setDescription] = useState("");
@@ -28,16 +31,32 @@ const CreateDeckDialog = ({ onDeckCreated }: CreateDeckDialogProps) => {
     const handleSubmit = async () => {
         if (!name.trim()) return;
         try {
-            await createDeck({ name, description });
+            const createdDeck = await createDeck({ name, description });
+            toast.success(`Successfully created the deck "${name}"!`, {
+                action: {
+                    label: "Add Cards",
+                    onClick: () =>
+                        navigate(`/deck/${createdDeck.id}/newcard`, {
+                            state: {
+                                deckId: createdDeck.id,
+                                deckName: createdDeck.name,
+                            },
+                        }),
+                },
+            });
             setName("");
             setDescription("");
             setOpen(false);
             // call onDeckCreated (passed down from Dashboard) to refresh deck list after creating new deck
             onDeckCreated?.();
-        } catch {
-            toast.error(
-                "An error occurred while creating the deck. Please try again.",
-            );
+        } catch (error) {
+            if (axios.isAxiosError(error) && error.response?.status === 409) {
+                toast.error("A deck with that name already exists.");
+            } else {
+                toast.error(
+                    "An error occurred while creating the deck. Please try again.",
+                );
+            }
         }
     };
 
