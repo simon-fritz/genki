@@ -1,32 +1,27 @@
 import DeckButton from "@/components/dashboard/DeckButton";
 import CreateDeckButton from "@/components/dashboard/CreateDeckButton";
 import { BookOpen } from "lucide-react";
-
-const placeholderDecks = [
-    {
-        id: "0000001",
-        deckName: "DEUTSCH",
-        cardsNew: 12,
-        cardsLearn: 14,
-        cardsDue: 5,
-    },
-    {
-        id: "0000002",
-        deckName: "Intro to Deep Learning",
-        cardsNew: 12,
-        cardsLearn: 14,
-        cardsDue: 5,
-    },
-    {
-        id: "0000003",
-        deckName: "Foundations of Generative AI",
-        cardsNew: 12,
-        cardsLearn: 14,
-        cardsDue: 5,
-    },
-];
+import { getDecks } from "@/api/decks";
+import type { Deck } from "@/api/decks";
+import { useState, useEffect } from "react";
 
 const DashboardPage = () => {
+    const [decksFetched, setDecksFetched] = useState<Deck[]>([]);
+
+    useEffect(() => {
+        getDecks().then((data) => setDecksFetched(data));
+    }, []);
+
+    // set new, learn, due to 0 for now because not provided by api
+    const decks = decksFetched.map((deck) => ({
+        ...deck,
+        cardsNew: 0,
+        cardsLearn: 0,
+        cardsDue: 0,
+    }));
+
+    console.log(`Decks:\n${decks}`);
+
     return (
         <div className="min-h-screen">
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -43,44 +38,54 @@ const DashboardPage = () => {
                     </p>
                 </div>
 
+                {/* Prompt user to create decks if they don't have any */}
+                {decks.length === 0 && (
+                    <div className="text-center text-gray-500 my-3">
+                        You don't have any decks yet. Create your first using
+                        the button below!
+                    </div>
+                )}
+
                 {/* Create Deck Button */}
                 <div className="mb-8">
                     <CreateDeckButton />
                 </div>
 
                 {/* Decks Section */}
-                <div>
-                    {/* header row with labels */}
-                    <div className="hidden md:flex justify-between items-center text-sm font-semibold text-gray-600 mb-3 px-4 uppercase tracking-wider">
-                        <span className="flex-1">Deck Name</span>
-                        <div className="flex items-center space-x-2 text-sm font-semibold">
-                            <span className="min-w-6 text-right text-blue-600">
-                                New
-                            </span>
-                            <span className="min-w-6 text-right text-red-600">
-                                Learn
-                            </span>
-                            <span className="min-w-6 text-right text-green-600">
-                                Due
-                            </span>
-                            <span className="w-9"></span>
+                {decks.length > 0 && (
+                    <div>
+                        {/* header row with labels */}
+                        <div className="hidden md:flex justify-between items-center text-sm font-semibold text-gray-600 mb-3 px-4 uppercase tracking-wider">
+                            <span className="flex-1">Deck Name</span>
+                            <div className="flex items-center space-x-2 text-sm font-semibold">
+                                <span className="min-w-6 text-right text-blue-600">
+                                    New
+                                </span>
+                                <span className="min-w-6 text-right text-red-600">
+                                    Learn
+                                </span>
+                                <span className="min-w-6 text-right text-green-600">
+                                    Due
+                                </span>
+                                <span className="w-9"></span>
+                            </div>
+                        </div>
+
+                        {/* decks container */}
+                        <div className="space-y-2">
+                            {decks.map((deck) => (
+                                <DeckButton
+                                    key={deck.id}
+                                    deckId={deck.id}
+                                    deckName={deck.name}
+                                    cardsNew={deck.cardsNew}
+                                    cardsLearn={deck.cardsLearn}
+                                    cardsDue={deck.cardsDue}
+                                />
+                            ))}
                         </div>
                     </div>
-
-                    {/* decks container */}
-                    <div className="space-y-2">
-                        {placeholderDecks.map((deck) => (
-                            <DeckButton
-                                key={deck.id}
-                                deckId={deck.id}
-                                deckName={deck.deckName}
-                                cardsNew={deck.cardsNew}
-                                cardsLearn={deck.cardsLearn}
-                                cardsDue={deck.cardsDue}
-                            />
-                        ))}
-                    </div>
-                </div>
+                )}
             </div>
         </div>
     );
