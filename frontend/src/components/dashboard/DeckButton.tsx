@@ -2,15 +2,22 @@ import { Button } from "@/components/ui/button";
 import DeckDropdownMenu from "./DeckDropdownMenu";
 
 interface DeckButtonProps {
+    deckId: string;
     deckName: string;
     cardsNew: number;
     cardsLearn: number;
     cardsDue: number;
 }
 
-const DeckButton: React.FC<
-    DeckButtonProps & React.ComponentProps<typeof Button>
-> = ({ deckName, cardsNew, cardsLearn, cardsDue, ref, ...other }) => {
+const DeckButton = ({
+    deckId,
+    deckName,
+    cardsNew,
+    cardsLearn,
+    cardsDue,
+    ref,
+    ...other
+}: DeckButtonProps & React.ComponentProps<typeof Button>) => {
     return (
         <Button variant="outline" size={"deckbutton"} ref={ref} {...other}>
             {/* deck name on the left side of deck button */}
@@ -37,14 +44,7 @@ const DeckButton: React.FC<
                 </span>
 
                 {/* options menu icon */}
-                <DeckDropdownMenu />
-                {/*<MoreVertical
-                    className="h-5 w-5 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer shrink-0 ml-2"
-                    onClick={(e) => {
-                        e.stopPropagation;
-                        console.log(`User clicked options for ${deckName}`);
-                    }}
-                />*/}
+                <DeckDropdownMenu deckId={deckId} deckName={deckName} />
             </div>
         </Button>
     );

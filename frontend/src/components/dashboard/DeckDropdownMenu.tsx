@@ -1,4 +1,6 @@
+import { useNavigate } from "react-router-dom";
 import {
+    Plus,
     MoreVertical,
     Edit,
     Trash,
@@ -8,7 +10,6 @@ import {
     SlidersHorizontal,
     Upload,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -17,20 +18,41 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { RagUpload } from "../settings/RagUpload";
 
-const DeckDropdownMenu = () => {
+interface DeckDropdownMenuProps {
+    deckId: string;
+    deckName: string;
+}
+
+const DeckDropdownMenu = ({ deckId, deckName }: DeckDropdownMenuProps) => {
+    const navigate = useNavigate();
     return (
         <DropdownMenu>
             {/* asChild tells DropdownMenuTrigger to use its direct child (the Button)*/}
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <div
+                    role="button"
+                    className="p-1 rounded hover:bg-gray-100 transition-colors cursor-pointer"
+                    onClick={(e) => e.stopPropagation()}
+                >
                     <MoreVertical className="h-4 w-4" />
                     {/* screenreader text for accessibility */}
                     <span className="sr-only">More actions</span>
-                </Button>
+                </div>
             </DropdownMenuTrigger>
 
             {/* content of the dropdown menu */}
             <DropdownMenuContent align="end" className="w-60">
+                <DropdownMenuItem
+                    onSelect={() =>
+                        navigate(`/deck/${deckId}/newcard`, {
+                            state: { deckId, deckName },
+                        })
+                    }
+                >
+                    <Plus className="mr-2 h-4 w-4" />
+                    <span>Add cards to deck</span>
+                </DropdownMenuItem>
+
                 <DropdownMenuItem>
                     <Edit className="mr-2 h-4 w-4" />
                     <span>Rename deck</span>
