@@ -14,7 +14,6 @@ import { toast } from "sonner";
 
 function LoginPage() {
     const navigate = useNavigate();
-
     const [usernameOrEmail, setUsernameOrEmail] = useState<string>("");
     const [password, setPassword] = useState<string>("");
     const [formError, setFormError] = useState<string | null>(null);

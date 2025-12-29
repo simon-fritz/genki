@@ -22,7 +22,9 @@ class CardApiTests(APITestCase):
         )
 
         self.deck = Deck.objects.create(user=self.user, name="Main", description="")
-        self.other_deck = Deck.objects.create(user=self.other_user, name="Other", description="")
+        self.other_deck = Deck.objects.create(
+            user=self.other_user, name="Other", description=""
+        )
 
         self.client.force_authenticate(user=self.user)
 
@@ -121,9 +123,12 @@ class CardApiTests(APITestCase):
         card.refresh_from_db()
         self.assertEqual(card.deck_id, self.deck.id)
 
+
 class AutoTuneTests(APITestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="u2", email="u2@test.com", password="pass12345")
+        self.user = User.objects.create_user(
+            username="u2", email="u2@test.com", password="pass12345"
+        )
         self.client.force_authenticate(user=self.user)
         self.profile, _ = UserProfile.objects.get_or_create(user=self.user)
 
@@ -133,14 +138,21 @@ class AutoTuneTests(APITestCase):
             deck=self.deck,
             front="What is a heap?",
             back="A heap is ...",
-            generation_meta={"prompt_version": "v1", "features_used": ["examples", "step_by_step"], "rag_used": True, "sources": []},
+            generation_meta={
+                "prompt_version": "v1",
+                "features_used": ["examples", "step_by_step"],
+                "rag_used": True,
+                "sources": [],
+            },
         )
 
     def test_review_increases_weights_for_used_features_on_easy(self):
         before_examples = float(self.profile.weights.get("examples", 0.5))
         before_steps = float(self.profile.weights.get("step_by_step", 0.5))
 
-        resp = self.client.post(f"/api/cards/{self.card.id}/review/", {"rating": 3}, format="json")
+        resp = self.client.post(
+            f"/api/cards/{self.card.id}/review/", {"rating": 3}, format="json"
+        )
         self.assertEqual(resp.status_code, status.HTTP_200_OK)
 
         self.profile.refresh_from_db()

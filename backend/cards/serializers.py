@@ -4,6 +4,7 @@ from .models import Deck, Card
 
 class DeckSerializer(serializers.ModelSerializer):
     """Lightweight deck serializer for CRUD."""
+
     class Meta:
         model = Deck
         fields = [
@@ -18,6 +19,7 @@ class DeckSerializer(serializers.ModelSerializer):
 
 class CardSerializer(serializers.ModelSerializer):
     """Card serializer with ownership checks."""
+
     class Meta:
         model = Card
         fields = [
@@ -45,7 +47,9 @@ class CardSerializer(serializers.ModelSerializer):
         allowed_keys = {"prompt_version", "features_used", "rag_used", "sources"}
         unknown = set(meta.keys()) - allowed_keys
         if unknown:
-            raise serializers.ValidationError(f"Unknown generation_meta keys: {sorted(unknown)}")
+            raise serializers.ValidationError(
+                f"Unknown generation_meta keys: {sorted(unknown)}"
+            )
         return meta
 
     def validate_deck(self, deck):
@@ -56,7 +60,9 @@ class CardSerializer(serializers.ModelSerializer):
         request = self.context.get("request")
         user = getattr(request, "user", None)
         if user is None or user.is_anonymous:
-            raise serializers.ValidationError("Deck selection requires an authenticated user.")
+            raise serializers.ValidationError(
+                "Deck selection requires an authenticated user."
+            )
 
         if deck.user_id != user.id:
             raise serializers.ValidationError("You can only use your own decks.")
@@ -66,8 +72,9 @@ class CardSerializer(serializers.ModelSerializer):
 
 class CardReviewSerializer(serializers.Serializer):
     """Validate review payloads submitted from the study session."""
+
     rating = serializers.IntegerField(
         min_value=0,
         max_value=3,
-        help_text="Spaced repetition rating where 0 is a lapse and 3 is easy."
+        help_text="Spaced repetition rating where 0 is a lapse and 3 is easy.",
     )

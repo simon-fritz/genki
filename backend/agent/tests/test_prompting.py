@@ -1,6 +1,7 @@
 """
 Tests for the prompting module.
 """
+
 import pytest
 from agent.prompting import build_style_instructions
 
@@ -12,7 +13,7 @@ class TestBuildStyleInstructions:
         """Default preferences should return balanced style."""
         style, features = build_style_instructions({}, {})
         assert "balanced" in style.lower() or "150-220 words" in style
-        
+
     def test_concise_verbosity(self):
         """Concise verbosity should limit to 120 words."""
         style, _ = build_style_instructions({"verbosity": "concise"}, {})
@@ -92,20 +93,23 @@ class TestBuildStyleInstructions:
     def test_analogy_domain_included(self):
         """Custom analogy domain should be included when analogies enabled."""
         style, features = build_style_instructions(
-            {"include_analogies": True, "analogy_domain": "sports"}, 
-            {}
+            {"include_analogies": True, "analogy_domain": "sports"}, {}
         )
         assert "sports" in style
         assert "analogies" in features
 
     def test_examples_count(self):
         """Custom examples count should be respected."""
-        style, _ = build_style_instructions({"examples_per_answer": 3, "include_examples": True}, {})
+        style, _ = build_style_instructions(
+            {"examples_per_answer": 3, "include_examples": True}, {}
+        )
         assert "3" in style
 
     def test_none_values_handled(self):
         """None values in weights should be handled gracefully."""
-        style, features = build_style_instructions({}, {"examples": None, "analogies": 0.6})
+        style, features = build_style_instructions(
+            {}, {"examples": None, "analogies": 0.6}
+        )
         assert "analogies" in features
 
     def test_combined_preferences_and_weights(self):
@@ -123,7 +127,7 @@ class TestBuildStyleInstructions:
             "mnemonic": 0.65,
         }
         style, features = build_style_instructions(prefs, weights)
-        
+
         assert "200-350 words" in style
         assert "examples" in features
         assert "step_by_step" in features

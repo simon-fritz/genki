@@ -5,6 +5,7 @@ from django.utils import timezone
 
 class DeckManager(models.Manager):
     """Custom manager for Deck model."""
+
     pass
 
 
@@ -14,14 +15,14 @@ class CardManager(models.Manager):
     def due_for_user(self, user):
         """
         Return all cards due for review for a given user.
-        
+
         Cards are considered due if:
         - They belong to the user
         - due_at <= now() (timezone-aware)
-        
+
         Args:
             user: The user object (AUTH_USER_MODEL)
-        
+
         Returns:
             QuerySet of due cards
         """
@@ -35,10 +36,9 @@ class Deck(models.Model):
     """
     A deck is a collection of cards grouped by the user.
     """
+
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='decks'
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="decks"
     )
     name = models.CharField(max_length=200)
     description = models.TextField(blank=True)
@@ -51,50 +51,36 @@ class Deck(models.Model):
         return self.name
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ["-created_at"]
 
 
 class Card(models.Model):
     """A flashcard with minimal spaced repetition tracking."""
+
     owner = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='cards'
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="cards"
     )
     deck = models.ForeignKey(
-        Deck,
-        on_delete=models.CASCADE,
-        related_name='cards',
-        null=True,
-        blank=True
+        Deck, on_delete=models.CASCADE, related_name="cards", null=True, blank=True
     )
-    
+
     # Card content
     front = models.TextField(help_text="Front side text")
     back = models.TextField(help_text="Back side text")
-    
+
     # Spaced repetition fields (SM-2 algorithm)
     due_at = models.DateTimeField(
-        default=timezone.now,
-        help_text="Next scheduled review time"
+        default=timezone.now, help_text="Next scheduled review time"
     )
     interval = models.PositiveIntegerField(
-        default=0,
-        help_text="Days until next review"
+        default=0, help_text="Days until next review"
     )
-    ease_factor = models.FloatField(
-        default=2.5,
-        help_text="Ease factor for spacing"
-    )
+    ease_factor = models.FloatField(default=2.5, help_text="Ease factor for spacing")
     repetitions = models.PositiveIntegerField(
-        default=0,
-        help_text="Count of successful reviews"
+        default=0, help_text="Count of successful reviews"
     )
-    lapses = models.PositiveIntegerField(
-        default=0,
-        help_text="Count of failed reviews"
-    )
-    
+    lapses = models.PositiveIntegerField(default=0, help_text="Count of failed reviews")
+
     # Timestamps
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -111,4 +97,4 @@ class Card(models.Model):
         return preview
 
     class Meta:
-        ordering = ['due_at']
+        ordering = ["due_at"]

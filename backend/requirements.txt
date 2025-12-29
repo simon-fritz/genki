@@ -13,7 +13,9 @@ python-dotenv>=1.0.1
 dotenv>=0.9.9
 langgraph>=0.1.0
 tavily-python>=0.1.0
-corsheaders>=3.14.0
+django-cors-headers>=3.14.0
+gunicorn>=21.2.0
+whitenoise>=6.7.0
 
 # Additional testing dependencies
 pytest>=7.4.0

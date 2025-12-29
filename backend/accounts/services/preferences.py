@@ -6,13 +6,21 @@ from typing import Dict, List, Tuple
 from accounts.models import UserProfile
 
 RATING_TO_REWARD = {
-    0: -1.0,   # lapse
-    1: -0.3,   # hard
-    2: 0.3,    # good
-    3: 1.0,    # easy
+    0: -1.0,  # lapse
+    1: -0.3,  # hard
+    2: 0.3,  # good
+    3: 1.0,  # easy
 }
 
-KNOWN_FEATURES = {"examples", "analogies", "step_by_step", "mnemonic", "quiz", "visual", "concise"}
+KNOWN_FEATURES = {
+    "examples",
+    "analogies",
+    "step_by_step",
+    "mnemonic",
+    "quiz",
+    "visual",
+    "concise",
+}
 
 
 def _clip01(x: float) -> float:

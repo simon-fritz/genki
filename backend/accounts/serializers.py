@@ -6,33 +6,54 @@ from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from .models import UserProfile
 
 ALLOWED_PREF_KEYS = {
-    "verbosity", "structure", "include_examples", "examples_per_answer",
-    "include_analogies", "analogy_domain", "step_by_step", "socratic_mode",
-    "include_mnemonic", "quiz_at_end", "language", "difficulty", "auto_tune",
+    "verbosity",
+    "structure",
+    "include_examples",
+    "examples_per_answer",
+    "include_analogies",
+    "analogy_domain",
+    "step_by_step",
+    "socratic_mode",
+    "include_mnemonic",
+    "quiz_at_end",
+    "language",
+    "difficulty",
+    "auto_tune",
 }
 
-ALLOWED_WEIGHT_KEYS = {"examples", "analogies", "step_by_step", "mnemonic", "quiz", "visual", "concise"}
-
+ALLOWED_WEIGHT_KEYS = {
+    "examples",
+    "analogies",
+    "step_by_step",
+    "mnemonic",
+    "quiz",
+    "visual",
+    "concise",
+}
 
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('id', 'username', 'email')
-        read_only_fields = ('id',)
+        fields = ("id", "username", "email")
+        read_only_fields = ("id",)
 
 
 class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    password = serializers.CharField(
+        write_only=True, required=True, validators=[validate_password]
+    )
     password2 = serializers.CharField(write_only=True, required=True)
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'password', 'password2')
+        fields = ("username", "email", "password", "password2")
 
     def validate(self, attrs):
-        if attrs['password'] != attrs['password2']:
-            raise serializers.ValidationError({"password": "Password fields didn't match."})
+        if attrs["password"] != attrs["password2"]:
+            raise serializers.ValidationError(
+                {"password": "Password fields didn't match."}
+            )
         return attrs
 
     def validate_username(self, value):
@@ -46,7 +67,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
-        validated_data.pop('password2')
+        validated_data.pop("password2")
         user = User.objects.create_user(**validated_data)
         return user
 
@@ -57,12 +78,13 @@ class LoginSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         from django.contrib.auth import authenticate
-        username_or_email = attrs['username_or_email']
-        password = attrs['password']
-        
+
+        username_or_email = attrs["username_or_email"]
+        password = attrs["password"]
+
         # Try to authenticate with username first
         user = authenticate(username=username_or_email, password=password)
-        
+
         # If not found, try to find user by email and authenticate
         if not user:
             try:
@@ -70,10 +92,10 @@ class LoginSerializer(serializers.Serializer):
                 user = authenticate(username=user_obj.username, password=password)
             except User.DoesNotExist:
                 pass
-        
+
         if not user:
             raise serializers.ValidationError("Invalid credentials.")
-        attrs['user'] = user
+        attrs["user"] = user
         return attrs
 
 
@@ -100,7 +122,9 @@ class UserProfileUpdateSerializer(serializers.Serializer):
     def validate_preferences(self, prefs):
         unknown = set(prefs.keys()) - ALLOWED_PREF_KEYS
         if unknown:
-            raise serializers.ValidationError(f"Unknown preference keys: {sorted(unknown)}")
+            raise serializers.ValidationError(
+                f"Unknown preference keys: {sorted(unknown)}"
+            )
         return prefs
 
     def validate_weights(self, weights):
@@ -113,5 +137,7 @@ class UserProfileUpdateSerializer(serializers.Serializer):
             except Exception:
                 raise serializers.ValidationError(f"Weight '{k}' must be a number.")
             if fv < 0 or fv > 1:
-                raise serializers.ValidationError(f"Weight '{k}' must be between 0 and 1.")
+                raise serializers.ValidationError(
+                    f"Weight '{k}' must be between 0 and 1."
+                )
         return weights

@@ -4,40 +4,45 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('cards', '0003_remove_card_is_suspended'),
+        ("cards", "0003_remove_card_is_suspended"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='card',
-            name='back',
-            field=models.TextField(help_text='Back side text'),
+            model_name="card",
+            name="back",
+            field=models.TextField(help_text="Back side text"),
         ),
         migrations.AlterField(
-            model_name='card',
-            name='ease_factor',
-            field=models.FloatField(default=2.5, help_text='Ease factor for spacing'),
+            model_name="card",
+            name="ease_factor",
+            field=models.FloatField(default=2.5, help_text="Ease factor for spacing"),
         ),
         migrations.AlterField(
-            model_name='card',
-            name='front',
-            field=models.TextField(help_text='Front side text'),
+            model_name="card",
+            name="front",
+            field=models.TextField(help_text="Front side text"),
         ),
         migrations.AlterField(
-            model_name='card',
-            name='interval',
-            field=models.PositiveIntegerField(default=0, help_text='Days until next review'),
+            model_name="card",
+            name="interval",
+            field=models.PositiveIntegerField(
+                default=0, help_text="Days until next review"
+            ),
         ),
         migrations.AlterField(
-            model_name='card',
-            name='lapses',
-            field=models.PositiveIntegerField(default=0, help_text='Count of failed reviews'),
+            model_name="card",
+            name="lapses",
+            field=models.PositiveIntegerField(
+                default=0, help_text="Count of failed reviews"
+            ),
         ),
         migrations.AlterField(
-            model_name='card',
-            name='repetitions',
-            field=models.PositiveIntegerField(default=0, help_text='Count of successful reviews'),
+            model_name="card",
+            name="repetitions",
+            field=models.PositiveIntegerField(
+                default=0, help_text="Count of successful reviews"
+            ),
         ),
     ]

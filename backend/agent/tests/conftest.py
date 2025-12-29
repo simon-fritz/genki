@@ -1,6 +1,7 @@
 """
 Pytest fixtures for agent tests.
 """
+
 import os
 import pytest
 from unittest.mock import MagicMock, patch
@@ -15,9 +16,7 @@ from accounts.models import UserProfile
 def test_user(db):
     """Create a test user."""
     user = User.objects.create_user(
-        username='testuser',
-        email='test@example.com',
-        password='testpass123'
+        username="testuser", email="test@example.com", password="testpass123"
     )
     return user
 
@@ -43,10 +42,7 @@ def test_user_with_profile(test_user):
 @pytest.fixture
 def test_deck(test_user):
     """Create a test deck."""
-    return Deck.objects.create(
-        user=test_user,
-        name="Biology 101 - Cell Division"
-    )
+    return Deck.objects.create(user=test_user, name="Biology 101 - Cell Division")
 
 
 @pytest.fixture
@@ -60,7 +56,7 @@ def authenticated_client(test_user):
 @pytest.fixture
 def mock_llm():
     """Mock the LLM to avoid real API calls."""
-    with patch('agent.llm_graph.llm') as mock:
+    with patch("agent.llm_graph.llm") as mock:
         mock_response = MagicMock()
         mock_response.content = "Mocked LLM response"
         mock.invoke.return_value = mock_response
@@ -70,7 +66,7 @@ def mock_llm():
 @pytest.fixture
 def mock_llm_with_tools():
     """Mock the LLM with tools bound."""
-    with patch('agent.llm_graph.llm_with_tools') as mock:
+    with patch("agent.llm_graph.llm_with_tools") as mock:
         mock_response = MagicMock()
         mock_response.content = "This is a detailed answer about the topic."
         mock_response.tool_calls = None
@@ -81,9 +77,11 @@ def mock_llm_with_tools():
 @pytest.fixture
 def mock_vector_store():
     """Mock the Supabase vector store."""
-    with patch('agent.tools.SupabaseVectorStore') as mock_vs:
+    with patch("agent.tools.SupabaseVectorStore") as mock_vs:
         mock_doc = MagicMock()
-        mock_doc.page_content = "This is content from the deck documents about cell division."
+        mock_doc.page_content = (
+            "This is content from the deck documents about cell division."
+        )
         mock_vs.return_value.similarity_search.return_value = [mock_doc]
         yield mock_vs
 
@@ -91,7 +89,7 @@ def mock_vector_store():
 @pytest.fixture
 def mock_tavily():
     """Mock the Tavily search tool."""
-    with patch('agent.tools.web_search_tool') as mock:
+    with patch("agent.tools.web_search_tool") as mock:
         mock.invoke.return_value = "Web search results about the topic."
         yield mock
 
@@ -100,6 +98,7 @@ def mock_tavily():
 def sample_agent_state():
     """Return a sample initial agent state."""
     from langchain_core.messages import HumanMessage
+
     return {
         "messages": [HumanMessage(content="What is mitosis?")],
         "front": "What is mitosis?",
@@ -115,7 +114,7 @@ def sample_agent_state():
         "style_instructions": "",
         "features_used": [],
         "generation_meta": {},
-        "final_json": {}
+        "final_json": {},
     }
 
 
@@ -123,16 +122,16 @@ def sample_agent_state():
 @pytest.fixture
 def has_gemini_key():
     """Check if Gemini API key is available."""
-    return bool(os.getenv('GEMINI_API_KEY'))
+    return bool(os.getenv("GEMINI_API_KEY"))
 
 
 @pytest.fixture
 def has_tavily_key():
     """Check if Tavily API key is available."""
-    return bool(os.getenv('TAVILY_API_KEY'))
+    return bool(os.getenv("TAVILY_API_KEY"))
 
 
 @pytest.fixture
 def has_supabase_config():
     """Check if Supabase is configured."""
-    return bool(os.getenv('SUPABASE_URL') and os.getenv('SUPABASE_KEY'))
+    return bool(os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_KEY"))

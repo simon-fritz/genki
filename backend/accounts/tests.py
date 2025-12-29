@@ -7,7 +7,9 @@ from .models import UserProfile
 
 class PreferencesTests(APITestCase):
     def setUp(self):
-        self.user = User.objects.create_user(username="u1", email="u1@test.com", password="pass12345")
+        self.user = User.objects.create_user(
+            username="u1", email="u1@test.com", password="pass12345"
+        )
 
     def test_profile_created_on_user_create(self):
         profile = UserProfile.objects.filter(user=self.user).first()
@@ -26,7 +28,11 @@ class PreferencesTests(APITestCase):
         self.assertIn("preferences", resp.data)
 
         patch = {
-            "preferences": {"verbosity": "concise", "include_analogies": True, "analogy_domain": "everyday"},
+            "preferences": {
+                "verbosity": "concise",
+                "include_analogies": True,
+                "analogy_domain": "everyday",
+            },
             "weights": {"analogies": 0.9},
         }
         resp2 = self.client.patch("/api/auth/preferences/", patch, format="json")
