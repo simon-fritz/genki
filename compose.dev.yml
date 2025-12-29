@@ -1,0 +1,56 @@
+services:
+  backend:
+    container_name: genki-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: python manage.py runserver 0.0.0.0:8000
+    env_file:
+      - ./backend/.env
+    environment:
+      DEBUG: "True"
+      ALLOWED_HOSTS: "localhost,127.0.0.1,backend,genki-backend"
+      CORS_ALLOWED_ORIGINS: "http://localhost:5173,http://127.0.0.1:5173"
+    volumes:
+      - ./backend:/app
+    expose:
+      - "8000"
+    ports:
+      - "8000:8000"
+    depends_on:
+      backend_migrations:
+        condition: service_completed_successfully
+
+  backend_migrations:
+    container_name: genki-backend-migrations
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: [ "python", "manage.py", "migrate", "--noinput" ]
+    env_file:
+      - ./backend/.env
+    environment:
+      DEBUG: "True"
+      ALLOWED_HOSTS: "localhost,127.0.0.1,backend,genki-backend"
+      CORS_ALLOWED_ORIGINS: "http://localhost:5173,http://127.0.0.1:5173"
+    volumes:
+      - ./backend:/app
+
+  frontend:
+    container_name: genki-frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      WATCHPACK_POLLING: "true"
+      VITE_API_BASE_URL: "/api"
+      NODE_OPTIONS: "--dns-result-order=ipv4first"
+      DOCKER: "true"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    depends_on:
+      - backend
