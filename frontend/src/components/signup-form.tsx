@@ -12,7 +12,7 @@ import {
   FieldGroup,
   FieldLabel,
 } from "@/components/ui/field"
-import { Input } from "@/components/ui/Input.tsx"
+import { Input } from "@/components/ui/input.tsx"
 
 export function SignupForm({ ...props }: React.ComponentProps<typeof Card>) {
   return (
