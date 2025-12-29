@@ -1,3 +1,4 @@
+import os
 from django.conf import settings
 from langchain_core.tools import tool
 from langchain_community.tools.tavily_search import TavilySearchResults
@@ -10,7 +11,16 @@ from uploads.services.document_ingestion import (
 )
 
 # 1. Web Search Tool (for general context)
-web_search_tool = TavilySearchResults(max_results=3)
+_tavily_api_key = (
+    getattr(settings, "TAVILY_API_KEY", None)
+    or os.getenv("TAVILY_API_KEY")
+    or "DUMMY_TAVILY_API_KEY"
+)
+
+web_search_tool = TavilySearchResults(
+    max_results=3,
+    tavily_api_key=_tavily_api_key,
+)
 
 
 # 2. Scoped RAG Tool

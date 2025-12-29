@@ -144,13 +144,13 @@ class TestRapidFlashcardBacksideView:
         """Should require authentication."""
         client = APIClient()
         response = client.post(
-            "/api/agent/flashcard/backside/rapid/", {"front": "What is AI?"}
+            "/api/agent/flashcard/rapid/backside", {"front": "What is AI?"}
         )
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
     def test_requires_front_field(self, authenticated_client):
         """Should require front field."""
-        response = authenticated_client.post("/api/agent/flashcard/backside/rapid/", {})
+        response = authenticated_client.post("/api/agent/flashcard/rapid/backside", {})
         assert response.status_code == status.HTTP_400_BAD_REQUEST
 
     @patch("agent.views.llm")
@@ -170,7 +170,7 @@ class TestRapidFlashcardBacksideView:
             mock_prompt_instance.__or__ = lambda self, other: mock_chain
 
             response = authenticated_client.post(
-                "/api/agent/flashcard/backside/rapid/", {"front": "What is AI?"}
+                "/api/agent/flashcard/rapid/backside", {"front": "What is AI?"}
             )
 
         # Due to complex mocking, just verify structure
@@ -182,7 +182,7 @@ class TestRapidFlashcardBacksideView:
     def test_empty_front_rejected(self, authenticated_client):
         """Should reject empty front field."""
         response = authenticated_client.post(
-            "/api/agent/flashcard/backside/rapid/", {"front": "   "}
+            "/api/agent/flashcard/rapid/backside", {"front": "   "}
         )
         # Depending on validation, could be 400
         assert response.status_code in [status.HTTP_400_BAD_REQUEST, status.HTTP_200_OK]
