@@ -18,16 +18,25 @@ from .prompting import build_style_instructions
 logger = logging.getLogger(__name__)
 
 # --- Setup LLM ---
-llm = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash",
-    temperature=0.3,
-    google_api_key=settings.GEMINI_API_KEY,
-    convert_system_message_to_human=True,
-)
-
-# Bind tools to the LLM for the ReAct Agent
 tools = [search_deck_documents, web_search_tool]
-llm_with_tools = llm.bind_tools(tools)
+
+if getattr(settings, "GEMINI_API_KEY", ""):
+    llm = ChatGoogleGenerativeAI(
+        model="gemini-2.0-flash",
+        temperature=0.3,
+        google_api_key=settings.GEMINI_API_KEY,
+        convert_system_message_to_human=True,
+    )
+    llm_with_tools = llm.bind_tools(tools)
+else:
+    # CI / tests without keys: provide stubs (tests patch these anyway)
+    from unittest.mock import MagicMock
+
+    llm = MagicMock(name="llm")
+    llm.invoke.side_effect = RuntimeError("GEMINI_API_KEY not configured")
+
+    llm_with_tools = MagicMock(name="llm_with_tools")
+    llm_with_tools.invoke.side_effect = RuntimeError("GEMINI_API_KEY not configured")
 
 
 # --- Nodes ---

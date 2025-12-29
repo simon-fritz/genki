@@ -64,10 +64,12 @@ jobs:
 
       - name: Run tests
         env:
+          CI: "true"
           DJANGO_SECRET_KEY: ci-secret-key
-          DJANGO_DEBUG: "False"
-          DJANGO_ALLOWED_HOSTS: localhost
-        run: python manage.py test --noinput
+          DEBUG: "False"
+          ALLOWED_HOSTS: localhost
+          CORS_ALLOWED_ORIGINS: http://localhost:5173
+        run: pytest -m "not integration"
 
   frontend:
     name: Frontend build
