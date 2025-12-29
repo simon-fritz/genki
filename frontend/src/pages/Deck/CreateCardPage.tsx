@@ -19,7 +19,6 @@ const CreateCardPage = () => {
     const [deckName, setDeckName] = useState<string | null>(
         location.state?.deckName || null,
     );
-    const [loading, setLoading] = useState(!location.state?.deckName);
 
     // fall back to using API to get deck name if not stored in location state
     // i.e. happens when user types URL directly instead of accessing page from dashboard
@@ -40,9 +39,6 @@ const CreateCardPage = () => {
                         toast.error("The selected deck couldn't be found.");
                         navigate("/");
                     }
-                })
-                .finally(() => {
-                    if (!cancelled) setLoading(false);
                 });
         }
 
@@ -50,10 +46,6 @@ const CreateCardPage = () => {
             cancelled = true;
         };
     }, [deckId, deckName, navigate]);
-
-    if (loading) {
-        return <Spinner />;
-    }
 
     return (
         <div>
@@ -75,7 +67,9 @@ const CreateCardPage = () => {
                     </Button>
                 </div>
                 <p className="text-gray-500 text-xs mt-1">
-                    Card will be saved to {deckName || "..."}
+                    <span className="inline-flex items-center gap-1">
+                        Card will be saved to {deckName || <Spinner />}
+                    </span>
                 </p>
             </div>
         </div>

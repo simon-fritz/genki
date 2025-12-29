@@ -1,5 +1,6 @@
 import DeckButton from "@/components/dashboard/DeckButton";
-import CreateDeckDialog from "@/components/dashboard/CreateDeckDialog";
+import DeckEditDialog from "@/components/dashboard/DeckEditDialog";
+import CreateDeckButton from "@/components/dashboard/CreateDeckButton";
 import { BookOpen } from "lucide-react";
 import { getDecks } from "@/api/decks";
 import type { Deck } from "@/api/decks";
@@ -50,7 +51,11 @@ const DashboardPage = () => {
 
                 {/* Create Deck Button */}
                 <div className="mb-8">
-                    <CreateDeckDialog onDeckCreated={fetchDecks} />
+                    <DeckEditDialog
+                        mode="create"
+                        trigger={<CreateDeckButton />}
+                        onSuccess={fetchDecks}
+                    />
                 </div>
 
                 {/* Decks Section */}
@@ -75,11 +80,11 @@ const DashboardPage = () => {
                             {decks.map((deck) => (
                                 <DeckButton
                                     key={deck.id}
-                                    deckId={deck.id}
-                                    deckName={deck.name}
+                                    deck={deck}
                                     cardsNew={deck.cardsNew}
                                     cardsLearn={deck.cardsLearn}
                                     cardsDue={deck.cardsDue}
+                                    onDeckUpdated={fetchDecks}
                                 />
                             ))}
                         </div>
