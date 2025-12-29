@@ -132,7 +132,7 @@ def benchmark_llm_with_tools():
 
     messages = [
         SystemMessage(content="You are a helpful assistant."),
-        HumanMessage(content="What is photosynthesis? Answer briefly."),
+        HumanMessage(content="What is photosynthesis? Answer using tools."),
     ]
 
     def run():
