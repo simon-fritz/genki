@@ -3,8 +3,10 @@ import { Plus } from "lucide-react";
 import CardFrontsideField from "@/components/create-card/CardFrontsideField";
 import CardBacksideField from "@/components/create-card/CardBacksideField";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { useState, useEffect } from "react";
-import api from "@/api/client.ts";
+import { getDeck } from "@/api/decks.ts";
+import { toast } from "sonner";
 
 const CreateCardPage = () => {
     const navigate = useNavigate();
@@ -19,15 +21,31 @@ const CreateCardPage = () => {
     );
 
     // fall back to using API to get deck name if not stored in location state
-    // i.e. hapens when user types URL directly instead of accessing page from dashboard
-    // commented out because currently communication with /api/decks endpoints not ready
+    // i.e. happens when user types URL directly instead of accessing page from dashboard
     useEffect(() => {
-        if (!deckName && deckId) {
-            api.get(`/decks/${deckId}/`).then((res) => {
-                setDeckName(res.data.name);
-            });
+        let cancelled = false;
+
+        if (!deckId) {
+            navigate("/");
+            return;
         }
-    }, [deckId, deckName]);
+        if (!deckName) {
+            getDeck(deckId)
+                .then((deck) => {
+                    if (!cancelled) setDeckName(deck.name);
+                })
+                .catch(() => {
+                    if (!cancelled) {
+                        toast.error("The selected deck couldn't be found.");
+                        navigate("/");
+                    }
+                });
+        }
+
+        return () => {
+            cancelled = true;
+        };
+    }, [deckId, deckName, navigate]);
 
     return (
         <div>
@@ -49,7 +67,10 @@ const CreateCardPage = () => {
                     </Button>
                 </div>
                 <p className="text-gray-500 text-xs mt-1">
-                    Card will be saved to {deckName || "..."}
+                    <span className="inline-flex items-center gap-1">
+                        Card will be saved to deck{" "}
+                        {deckName ? `"${deckName}"` : <Spinner />}
+                    </span>
                 </p>
             </div>
         </div>

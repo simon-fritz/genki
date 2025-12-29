@@ -1,20 +1,21 @@
 import { Button } from "@/components/ui/button";
 import DeckDropdownMenu from "./DeckDropdownMenu";
+import type { Deck } from "@/api/decks";
 
 interface DeckButtonProps {
-    deckId: string;
-    deckName: string;
+    deck: Deck;
     cardsNew: number;
     cardsLearn: number;
     cardsDue: number;
+    onDeckUpdated?: () => void;
 }
 
 const DeckButton = ({
-    deckId,
-    deckName,
+    deck,
     cardsNew,
     cardsLearn,
     cardsDue,
+    onDeckUpdated,
     ref,
     ...other
 }: DeckButtonProps & React.ComponentProps<typeof Button>) => {
@@ -22,7 +23,7 @@ const DeckButton = ({
         <Button variant="outline" size={"deckbutton"} ref={ref} {...other}>
             {/* deck name on the left side of deck button */}
             <div className="flex-1 text-left font-medium text-gray-800 text-base overflow-hidden whitespace-nowrap text-ellipsis pr-4">
-                {deckName}
+                {deck.name}
             </div>
 
             {/* card counts and options menu on the right side */}
@@ -44,7 +45,7 @@ const DeckButton = ({
                 </span>
 
                 {/* options menu icon */}
-                <DeckDropdownMenu deckId={deckId} deckName={deckName} />
+                <DeckDropdownMenu deck={deck} onDeckUpdated={onDeckUpdated} />
             </div>
         </Button>
     );
