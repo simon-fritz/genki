@@ -5,6 +5,8 @@ import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
@@ -12,6 +14,18 @@ import logoIcon from "@/assets/logo_icon.png";
 
 const Header = () => {
     const navigate = useNavigate();
+
+    const username = (() => {
+        try {
+            const user = localStorage.getItem("user");
+            if (user) {
+                return JSON.parse(user).username || null;
+            }
+        } catch {
+            // Ignore parse errors
+        }
+        return null;
+    })();
 
     return (
         <div className="border-b border-gray-200 bg-white py-4 flex w-full items-center px-6">
@@ -46,6 +60,13 @@ const Header = () => {
                             />
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                            <DropdownMenuLabel className="font-normal">
+                                <p className="text-xs text-muted-foreground">
+                                    Hello,
+                                </p>
+                                <p className="font-medium">{username}</p>
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator />
                             <DropdownMenuItem
                                 onSelect={() => {
                                     clearTokens();

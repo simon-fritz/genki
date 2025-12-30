@@ -4,13 +4,25 @@ import CreateDeckButton from "@/components/dashboard/CreateDeckButton";
 import { BookOpen } from "lucide-react";
 import { getDecks } from "@/api/decks";
 import type { Deck } from "@/api/decks";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { toast } from "sonner";
 
 const DashboardPage = () => {
     const [decksFetched, setDecksFetched] = useState<Deck[]>([]);
     const [fetchError, setFetchError] = useState(false);
     const errorToastShown = useRef(false);
+
+    const username = useMemo(() => {
+        try {
+            const user = localStorage.getItem("user");
+            if (user) {
+                return JSON.parse(user).username || "User";
+            }
+        } catch {
+            // Ignore parse errors
+        }
+        return "User";
+    }, []);
 
     const fetchDecks = () => {
         getDecks()
@@ -48,7 +60,7 @@ const DashboardPage = () => {
                     <div className="flex items-center gap-3 mb-2">
                         <BookOpen className="h-8 w-8 text-blue-600" />
                         <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-                            Welcome back, Username!
+                            Welcome back, {username}!
                         </h1>
                     </div>
                     <p className="text-gray-600 ml-11">
