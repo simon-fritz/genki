@@ -4,13 +4,13 @@ import {
     useParams,
     useBlocker,
 } from "react-router-dom";
-import { Plus } from "lucide-react";
+import { Info, Plus } from "lucide-react";
 import CardFrontsideField from "@/components/create-card/CardFrontsideField";
 import CardBacksideField from "@/components/create-card/CardBacksideField";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import ExitConfirmationDialog from "@/components/create-card/ExitConfirmationDialog";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { getDeck } from "@/api/decks.ts";
 import { getBacksideRapidMode, getBacksideAccuracyMode } from "@/api/agent";
 import { createCard } from "@/api/cards";
@@ -51,6 +51,9 @@ const CreateCardPage = () => {
     const hasUnsavedContent = !!(front.trim() || back.trim());
     const blocker = useBlocker(hasUnsavedContent);
 
+    // Detect Mac for keyboard shortcut display
+    const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+
     // Show exit dialog when navigation is blocked
     useEffect(() => {
         if (blocker.state === "blocked") {
@@ -70,6 +73,71 @@ const CreateCardPage = () => {
         return () =>
             window.removeEventListener("beforeunload", handleBeforeUnload);
     }, [hasUnsavedContent]);
+
+    const handleSaveCard = useCallback(async () => {
+        if (!deckId) {
+            toast.error("Could not save the card: No deck selected.");
+            return;
+        }
+        setIsSaving(true);
+        try {
+            await createCard({ deck: deckId, front, back });
+            toast.success("Card added successfully!");
+            setFront("");
+            setBack("");
+        } catch {
+            toast.error("The card could not be saved due to an error.");
+        } finally {
+            setIsSaving(false);
+        }
+    }, [deckId, front, back]);
+
+    const handleAddAndContinueClicked = useCallback(async () => {
+        if (!front.trim() || !back.trim()) {
+            toast.error("Please fill in both the front and back of the card.");
+            return;
+        }
+        if (!deckId) {
+            toast.error("No deck selected.");
+            return;
+        }
+        if (
+            generatedTextInBack &&
+            front.trim() !== lastFrontsidePrompt.trim()
+        ) {
+            // the frontside has changed since last generation
+            // potential mismatch of frontside and backside
+            setShowChangedFrontsideDialog(true);
+            return;
+        }
+        handleSaveCard();
+    }, [
+        front,
+        back,
+        deckId,
+        generatedTextInBack,
+        lastFrontsidePrompt,
+        handleSaveCard,
+    ]);
+
+    // Ctrl+Enter to add and continue if card is not empty
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                e.preventDefault();
+                if (front.trim() && back.trim()) {
+                    handleAddAndContinueClicked();
+                } else {
+                    toast.info(
+                        "Please fill in the front and back to save the card",
+                    );
+                }
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [front, back, handleAddAndContinueClicked]);
 
     // this function will call the right api based on rapidModeEnabled
     // it assumes completions are enabled, so do not call this if you do not want a completion
@@ -128,45 +196,6 @@ const CreateCardPage = () => {
         } finally {
             setIsSaving(false);
         }
-    };
-
-    const handleSaveCard = async () => {
-        if (!deckId) {
-            toast.error("Could not save the card: No deck selected.");
-            return;
-        }
-        setIsSaving(true);
-        try {
-            await createCard({ deck: deckId, front, back });
-            toast.success("Card added successfully!");
-            setFront("");
-            setBack("");
-        } catch {
-            toast.error("The card could not be saved due to an error.");
-        } finally {
-            setIsSaving(false);
-        }
-    };
-
-    const handleAddAndContinueClicked = async () => {
-        if (!front.trim() || !back.trim()) {
-            toast.error("Please fill in both the front and back of the card.");
-            return;
-        }
-        if (!deckId) {
-            toast.error("No deck selected.");
-            return;
-        }
-        if (
-            generatedTextInBack &&
-            front.trim() !== lastFrontsidePrompt.trim()
-        ) {
-            // the frontside has changed since last generation
-            // potential mismatch of frontside and backside
-            setShowChangedFrontsideDialog(true);
-            return;
-        }
-        handleSaveCard();
     };
 
     // fall back to using API to get deck name if not stored in location state
@@ -240,29 +269,42 @@ const CreateCardPage = () => {
                     toast.success("Your feedback has been recorded!");
                 }}
             />
-            <div className="flex flex-col items-end mt-4">
-                <div className="flex gap-2">
-                    <Button variant="outline" onClick={() => navigate("/")}>
-                        Done
-                    </Button>
-                    <Button
-                        onClick={handleAddAndContinueClicked}
-                        disabled={isSaving}
-                    >
-                        {isSaving ? (
-                            <Spinner className="h-4 w-4 mr-1" />
-                        ) : (
-                            <Plus className="h-4 w-4 mr-1" />
-                        )}
-                        Add and continue
-                    </Button>
-                </div>
-                <p className="text-gray-500 text-xs mt-1">
-                    <span className="inline-flex items-center gap-1">
-                        Card will be saved to deck{" "}
-                        {deckName ? `"${deckName}"` : <Spinner />}
-                    </span>
+            <div className="flex justify-between items-center mt-4">
+                <p className="text-gray-500 text-xs mt-1 flex items-center">
+                    <Info className="h-3 w-3 mr-1" />
+                    Cards will be saved to deck{" "}
+                    {deckName ? `"${deckName}"` : <Spinner />}
                 </p>
+                <div className="flex flex-col items-end">
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={() => navigate("/")}>
+                            Done
+                        </Button>
+                        <Button
+                            variant={
+                                front.trim() && back.trim()
+                                    ? "default"
+                                    : "disabled"
+                            }
+                            onClick={handleAddAndContinueClicked}
+                            disabled={isSaving}
+                        >
+                            {isSaving ? (
+                                <Spinner className="h-4 w-4 mr-1" />
+                            ) : (
+                                <Plus className="h-4 w-4 mr-1" />
+                            )}
+                            Add and continue
+                        </Button>
+                    </div>
+                    {front.trim() && back.trim() && (
+                        <p className="text-gray-500 text-xs mt-1">
+                            <span className="inline-flex items-center gap-1">
+                                {isMac ? "⌘+enter" : "ctrl+enter"}
+                            </span>
+                        </p>
+                    )}
+                </div>
             </div>
 
             <ChangedFrontsideConfirmationDialog
@@ -292,7 +334,7 @@ const CreateCardPage = () => {
                 }}
                 onExitWithoutSaving={() => {
                     setShowExitDialog(false);
-                    toast("Card discarded");
+                    toast.info("Card discarded");
                     if (blocker.state === "blocked") {
                         blocker.proceed();
                     } else {

@@ -13,6 +13,7 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { SubtleButton } from "@/components/create-card/SubtleButton";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
+import { Info } from "lucide-react";
 
 interface CardBacksideFieldProps {
     value: string;
@@ -72,24 +73,26 @@ const CardBacksideField = ({
                                     : "Completions off"
                             }
                             onClick={() => {
-                                toast.info(
-                                    completionsEnabled ? (
-                                        <p>
-                                            AI completions disabled.
-                                            <br />
-                                            <br />
-                                            To generate answers with AI,
-                                            reenable completions.
+                                const nowEnabled = !completionsEnabled;
+                                const subtext = nowEnabled
+                                    ? "The backside of cards will be generated for you"
+                                    : "To generate answers with AI, reenable completions";
+                                toast(
+                                    <>
+                                        <div className="flex items-center gap-2">
+                                            <Info className="w-3 h-8" />
+                                            <p>
+                                                AI completions{" "}
+                                                {nowEnabled
+                                                    ? "enabled"
+                                                    : "disabled"}
+                                                .
+                                            </p>
+                                        </div>
+                                        <p className="text-xs text-gray-500">
+                                            {subtext}
                                         </p>
-                                    ) : (
-                                        <p>
-                                            AI completions enabled.
-                                            <br />
-                                            <br />
-                                            The backside of cards will be
-                                            generated for you.
-                                        </p>
-                                    ),
+                                    </>,
                                 );
                                 onCompletionsToggle();
                             }}
@@ -105,24 +108,29 @@ const CardBacksideField = ({
                                         : "Accuracy mode"
                                 }
                                 onClick={() => {
-                                    toast.info(
-                                        rapidModeEnabled ? (
-                                            <p>
-                                                Now using <b>accuracy mode</b>.
-                                                <br />
-                                                <br />
-                                                Uploaded files will be consulted
-                                                to provide better answers.
+                                    const nowRapid = !rapidModeEnabled;
+                                    const toptext = nowRapid ? (
+                                        <p>
+                                            Now using <b>rapid mode</b>.
+                                        </p>
+                                    ) : (
+                                        <p>
+                                            Now using <b>accuracy mode</b>.
+                                        </p>
+                                    );
+                                    const subtext = nowRapid
+                                        ? "Cards will be generated without specialized knowledge"
+                                        : "Uploaded files will be consulted to give better answers";
+                                    toast(
+                                        <>
+                                            <div className="flex items-center gap-2">
+                                                <Info className="w-3 h-8" />
+                                                {toptext}
+                                            </div>
+                                            <p className="text-xs text-gray-500">
+                                                {subtext}
                                             </p>
-                                        ) : (
-                                            <p>
-                                                Now using <b>rapid mode</b>.
-                                                <br />
-                                                <br />
-                                                Cards will be generated without
-                                                specialized knowledge.
-                                            </p>
-                                        ),
+                                        </>,
                                     );
                                     onRapidModeToggle();
                                 }}
