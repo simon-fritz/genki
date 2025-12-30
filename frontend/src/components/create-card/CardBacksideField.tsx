@@ -28,6 +28,8 @@ interface CardBacksideFieldProps {
     changesSinceLastGeneration?: boolean;
     responseMarkedHelpful: boolean;
     onResponseMarkedHelpfulToggle: () => void;
+    showImprovementsPanel: boolean;
+    onToggleImprovementsPanel: () => void;
 }
 
 const CardBacksideField = ({
@@ -43,6 +45,8 @@ const CardBacksideField = ({
     changesSinceLastGeneration,
     responseMarkedHelpful,
     onResponseMarkedHelpfulToggle,
+    showImprovementsPanel,
+    onToggleImprovementsPanel,
 }: CardBacksideFieldProps) => {
     return (
         <FieldGroup>
@@ -138,7 +142,7 @@ const CardBacksideField = ({
                         )}
                     </div>
                     {!changesSinceLastGeneration && completionsEnabled && (
-                        <div className="flex gap-1">
+                        <div className="flex gap-1 items-start">
                             <SubtleButton
                                 icon={ThumbsUp}
                                 fill={responseMarkedHelpful}
@@ -150,10 +154,20 @@ const CardBacksideField = ({
                                 text="Regenerate"
                                 onClick={onRegenerate}
                             />
-                            <SubtleButton
-                                icon={MessageSquare}
-                                text="Ask for improvements"
-                            />
+                            <div
+                                className={`m-0 p-0 pb-2 -mb-1 ${showImprovementsPanel ? "bg-gray-100 rounded-t" : ""}`}
+                            >
+                                <SubtleButton
+                                    icon={MessageSquare}
+                                    text="Ask for improvements"
+                                    onClick={onToggleImprovementsPanel}
+                                    className={
+                                        showImprovementsPanel
+                                            ? "bg-gray-100"
+                                            : ""
+                                    }
+                                />
+                            </div>
                         </div>
                     )}
                 </div>

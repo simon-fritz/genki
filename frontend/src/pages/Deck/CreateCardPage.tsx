@@ -12,11 +12,17 @@ import { Spinner } from "@/components/ui/spinner";
 import ExitConfirmationDialog from "@/components/create-card/ExitConfirmationDialog";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { getDeck } from "@/api/decks.ts";
-import { getBacksideRapidMode, getBacksideAccuracyMode } from "@/api/agent";
+import {
+    getBacksideRapidMode,
+    getBacksideAccuracyMode,
+    getRevisedBacksideRapidMode,
+    getRevisedBacksideAccuracyMode,
+} from "@/api/agent";
 import { createCard } from "@/api/cards";
 import { toast } from "sonner";
 import type { BacksideResponse } from "@/api/agent";
 import ChangedFrontsideConfirmationDialog from "@/components/create-card/ChangedFrontsideConfirmationDialog";
+import ImprovementsPanel from "@/components/create-card/ImprovementsPanel";
 
 const CreateCardPage = () => {
     const navigate = useNavigate();
@@ -46,6 +52,9 @@ const CreateCardPage = () => {
     const [generatedTextInBack, setGeneratedTextInBack] = useState(false);
     const [showChangedFrontsideDialog, setShowChangedFrontsideDialog] =
         useState(false);
+    const [showImprovementsPanel, setShowImprovementsPanel] = useState(false);
+    const [isSubmittingImprovement, setIsSubmittingImprovement] =
+        useState(false);
 
     // Block navigation when there's unsaved content
     const hasUnsavedContent = !!(front.trim() || back.trim());
@@ -53,6 +62,13 @@ const CreateCardPage = () => {
 
     // Detect Mac for keyboard shortcut display
     const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+
+    // always hide improvements panel when the other feedback buttons are hidden
+    useEffect(() => {
+        if (changesSinceLastGeneration) {
+            setShowImprovementsPanel(false);
+        }
+    }, [changesSinceLastGeneration]);
 
     // Show exit dialog when navigation is blocked
     useEffect(() => {
@@ -91,6 +107,36 @@ const CreateCardPage = () => {
             setIsSaving(false);
         }
     }, [deckId, front, back]);
+
+    const handleSubmitImprovement = async (feedback: string) => {
+        if (!deckId) {
+            toast.error("Could not submit improvement: no deck selected.");
+            return;
+        }
+        setIsSubmittingImprovement(true);
+        try {
+            let response: BacksideResponse;
+            if (rapidModeEnabled) {
+                response = await getRevisedBacksideRapidMode({
+                    front,
+                    previous_backside: back,
+                    feedback,
+                });
+            } else {
+                response = await getRevisedBacksideAccuracyMode({
+                    front,
+                    previous_backside: back,
+                    feedback,
+                    deck_id: deckId,
+                });
+            }
+            setBack(response.back);
+        } catch {
+            toast.error("Failed to get improved response. Please try again.");
+        } finally {
+            setIsSubmittingImprovement(false);
+        }
+    };
 
     const handleAddAndContinueClicked = useCallback(async () => {
         if (!front.trim() || !back.trim()) {
@@ -268,6 +314,15 @@ const CreateCardPage = () => {
                     setResponseMarkedHelpful((prev) => !prev);
                     toast.success("Your feedback has been recorded!");
                 }}
+                showImprovementsPanel={showImprovementsPanel}
+                onToggleImprovementsPanel={() =>
+                    setShowImprovementsPanel((prev) => !prev)
+                }
+            />
+            <ImprovementsPanel
+                show={showImprovementsPanel}
+                onSubmit={handleSubmitImprovement}
+                isSubmitting={isSubmittingImprovement}
             />
             <div className="flex justify-between items-center mt-4">
                 <p className="text-gray-500 text-xs mt-1 flex items-center">
@@ -275,37 +330,31 @@ const CreateCardPage = () => {
                     Cards will be saved to deck{" "}
                     {deckName ? `"${deckName}"` : <Spinner />}
                 </p>
-                <div className="flex flex-col items-end">
-                    <div className="flex gap-2">
-                        <Button variant="outline" onClick={() => navigate("/")}>
-                            Done
-                        </Button>
-                        <Button
-                            variant={
-                                front.trim() && back.trim()
-                                    ? "default"
-                                    : "disabled"
-                            }
-                            onClick={handleAddAndContinueClicked}
-                            disabled={isSaving}
-                        >
-                            {isSaving ? (
-                                <Spinner className="h-4 w-4 mr-1" />
-                            ) : (
-                                <Plus className="h-4 w-4 mr-1" />
-                            )}
-                            Add and continue
-                        </Button>
-                    </div>
-                    {front.trim() && back.trim() && (
-                        <p className="text-gray-500 text-xs mt-1">
-                            <span className="inline-flex items-center gap-1">
-                                {isMac ? "⌘+enter" : "ctrl+enter"}
-                            </span>
-                        </p>
-                    )}
+                <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => navigate("/")}>
+                        Done
+                    </Button>
+                    <Button
+                        variant={
+                            front.trim() && back.trim() ? "default" : "disabled"
+                        }
+                        onClick={handleAddAndContinueClicked}
+                        disabled={isSaving}
+                    >
+                        {isSaving ? (
+                            <Spinner className="h-4 w-4 mr-1" />
+                        ) : (
+                            <Plus className="h-4 w-4 mr-1" />
+                        )}
+                        Add and continue
+                    </Button>
                 </div>
             </div>
+            {front.trim() && back.trim() && (
+                <p className="text-gray-500 text-xs mt-1 text-right">
+                    {isMac ? "⌘+enter" : "ctrl+enter"}
+                </p>
+            )}
 
             <ChangedFrontsideConfirmationDialog
                 open={showChangedFrontsideDialog}
