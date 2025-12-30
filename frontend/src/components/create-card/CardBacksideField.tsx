@@ -9,14 +9,17 @@ interface CardBacksideFieldProps {
     value: string;
     onChange: (value: string) => void;
     isGenerating?: boolean;
+    completionsEnabled: boolean;
+    onCompletionsToggle: () => void;
 }
 
 const CardBacksideField = ({
     value,
     onChange,
     isGenerating = false,
+    completionsEnabled,
+    onCompletionsToggle,
 }: CardBacksideFieldProps) => {
-    const [completionsEnabled, setCompletionsEnabled] = useState(true);
 
     return (
         <FieldGroup>

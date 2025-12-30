@@ -29,6 +29,7 @@ const CreateCardPage = () => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [showExitDialog, setShowExitDialog] = useState(false);
+    const [completionsEnabled, setCompletionsEnabled] = useState(true);
 
     const handleGenerateBackside = async () => {
         if (!front.trim()) {
@@ -127,11 +128,16 @@ const CreateCardPage = () => {
                 value={front}
                 onChange={setFront}
                 onSubmit={handleGenerateBackside}
+                isGenerating={isGenerating}
             />
             <CardBacksideField
                 value={back}
                 onChange={setBack}
                 isGenerating={isGenerating}
+                completionsEnabled={completionsEnabled}
+                onCompletionsToggle={() =>
+                    setCompletionsEnabled((prev) => !prev)
+                }
             />
             <div className="flex flex-col items-end mt-4">
                 <div className="flex gap-2">
