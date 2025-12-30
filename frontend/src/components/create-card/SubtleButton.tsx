@@ -11,6 +11,7 @@ interface SubtleButtonProps {
     onClick?: () => void;
     onFocus?: () => void;
     onBlur?: () => void;
+    fill?: boolean;
 }
 
 const SubtleButton = ({
@@ -19,17 +20,24 @@ const SubtleButton = ({
     onClick,
     onFocus,
     onBlur,
-}: SubtleButtonProps) => (
-    <button
-        type="button"
-        onClick={onClick}
-        className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 rounded hover:bg-gray-100 transition-colors cursor-pointer"
-        onFocus={onFocus}
-        onBlur={onBlur}
-    >
-        <Icon className="h-3 w-3" />
-        {text}
-    </button>
-);
+    fill = false,
+}: SubtleButtonProps) => {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className="flex items-center gap-1.5 px-2 py-1 text-xs text-gray-500 rounded hover:bg-gray-100 transition-colors cursor-pointer"
+            onFocus={onFocus}
+            onBlur={onBlur}
+        >
+            <Icon
+                fillOpacity={fill ? 1 : 0}
+                fill={fill ? "currentColor" : undefined}
+                className="h-3 w-3"
+            />
+            {text}
+        </button>
+    );
+};
 
 export { SubtleButton };

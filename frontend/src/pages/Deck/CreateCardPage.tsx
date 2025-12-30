@@ -5,11 +5,12 @@ import CardBacksideField from "@/components/create-card/CardBacksideField";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import ExitConfirmationDialog from "@/components/create-card/ExitConfirmationDialog";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getDeck } from "@/api/decks.ts";
-import { getBacksideRapid } from "@/api/agent";
+import { getBacksideRapidMode, getBacksideAccuracyMode } from "@/api/agent";
 import { createCard } from "@/api/cards";
 import { toast } from "sonner";
+import type { BacksideResponse } from "@/api/agent";
 
 const CreateCardPage = () => {
     const navigate = useNavigate();
@@ -30,16 +31,36 @@ const CreateCardPage = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [showExitDialog, setShowExitDialog] = useState(false);
     const [completionsEnabled, setCompletionsEnabled] = useState(true);
+    const [rapidModeEnabled, setRapidModeEnabled] = useState(false);
+    const backsideTextareaRef = useRef<HTMLTextAreaElement>(null);
+    const [generatedTextPresent, setGeneratedTextPresent] = useState(false);
+    const [responseMarkedHelpful, setResponseMarkedHelpful] = useState(false);
 
+    // this function will call the right api based on rapidModeEnabled
+    // it assumes completions are enabled, so do not call this if you do not want a completion
     const handleGenerateBackside = async () => {
+        if (!deckId) {
+            toast.error("Could not generate backside: no deck selected.");
+            return;
+        }
         if (!front.trim()) {
             toast.error("Please enter the front of the card first.");
             return;
         }
         setIsGenerating(true);
         try {
-            const response = await getBacksideRapid({ front });
+            let response: BacksideResponse;
+            if (rapidModeEnabled) {
+                response = await getBacksideRapidMode({ front });
+            } else {
+                response = await getBacksideAccuracyMode({
+                    front: front,
+                    deck_id: deckId,
+                });
+            }
             setBack(response.back);
+            setGeneratedTextPresent(true);
+            setResponseMarkedHelpful(false);
         } catch {
             toast.error("Failed to generate backside. Please try again.");
         } finally {
@@ -126,18 +147,44 @@ const CreateCardPage = () => {
         <div>
             <CardFrontsideField
                 value={front}
-                onChange={setFront}
-                onSubmit={handleGenerateBackside}
+                onChange={(val) => {
+                    setFront(val);
+                    setGeneratedTextPresent(false);
+                    setResponseMarkedHelpful(false);
+                }}
+                onSubmit={
+                    completionsEnabled
+                        ? handleGenerateBackside
+                        : () => backsideTextareaRef.current?.focus()
+                }
                 isGenerating={isGenerating}
+                completionsEnabled={completionsEnabled}
             />
             <CardBacksideField
+                backsideTextareaRef={backsideTextareaRef}
                 value={back}
-                onChange={setBack}
+                onChange={(val) => {
+                    setBack(val);
+                    setGeneratedTextPresent(false);
+                    setResponseMarkedHelpful(false);
+                }}
+                onRegenerate={handleGenerateBackside}
                 isGenerating={isGenerating}
                 completionsEnabled={completionsEnabled}
                 onCompletionsToggle={() =>
                     setCompletionsEnabled((prev) => !prev)
                 }
+                rapidModeEnabled={rapidModeEnabled}
+                onRapidModeToggle={() => {
+                    setRapidModeEnabled((prev) => !prev);
+                }}
+                generatedTextPresent={generatedTextPresent}
+                responseMarkedHelpful={responseMarkedHelpful}
+                onResponseMarkedHelpfulToggle={() => {
+                    /* Currently the "Helpful" button is not connected to any API endpoint */
+                    setResponseMarkedHelpful((prev) => !prev);
+                    toast.success("Your feedback has been recorded!");
+                }}
             />
             <div className="flex flex-col items-end mt-4">
                 <div className="flex gap-2">

@@ -9,6 +9,7 @@ interface CardFrontsideFieldProps {
     onChange: (value: string) => void;
     onSubmit: () => void;
     isGenerating: boolean;
+    completionsEnabled: boolean;
 }
 
 const CardFrontsideField = ({
@@ -16,6 +17,7 @@ const CardFrontsideField = ({
     onChange,
     onSubmit,
     isGenerating = false,
+    completionsEnabled,
 }: CardFrontsideFieldProps) => {
     const inputRef = useRef<HTMLInputElement>(null);
     const wasFocusedRef = useRef(false);
@@ -34,7 +36,7 @@ const CardFrontsideField = ({
     };
 
     return (
-        <FieldGroup className="mt-4">
+        <FieldGroup className="my-6">
             <Field>
                 <FieldLabel>Front of the card</FieldLabel>
                 <Input
@@ -51,10 +53,12 @@ const CardFrontsideField = ({
                     }}
                     disabled={isGenerating}
                 />
-                <div className="flex justify-end -mt-2">
+                <div
+                    className={`flex justify-end -mt-2 -mb-6 ${completionsEnabled ? "" : "invisible"}`}
+                >
                     <SubtleButton
                         icon={CornerDownLeft}
-                        text="Submit"
+                        text="Generate backside"
                         onClick={onSubmit}
                         onFocus={() => (wasFocusedRef.current = true)}
                         onBlur={() => {
