@@ -11,6 +11,7 @@ import { getBacksideRapidMode, getBacksideAccuracyMode } from "@/api/agent";
 import { createCard } from "@/api/cards";
 import { toast } from "sonner";
 import type { BacksideResponse } from "@/api/agent";
+import ChangedFrontsideConfirmationDialog from "@/components/create-card/ChangedFrontsideConfirmationDialog";
 
 const CreateCardPage = () => {
     const navigate = useNavigate();
@@ -33,8 +34,13 @@ const CreateCardPage = () => {
     const [completionsEnabled, setCompletionsEnabled] = useState(true);
     const [rapidModeEnabled, setRapidModeEnabled] = useState(false);
     const backsideTextareaRef = useRef<HTMLTextAreaElement>(null);
-    const [generatedTextPresent, setGeneratedTextPresent] = useState(false);
+    const [changesSinceLastGeneration, setChangesSinceLastGeneration] =
+        useState(true);
     const [responseMarkedHelpful, setResponseMarkedHelpful] = useState(false);
+    const [lastFrontsidePrompt, setLastFrontsidePrompt] = useState("");
+    const [generatedTextInBack, setGeneratedTextInBack] = useState(false);
+    const [showChangedFrontsideDialog, setShowChangedFrontsideDialog] =
+        useState(false);
 
     // this function will call the right api based on rapidModeEnabled
     // it assumes completions are enabled, so do not call this if you do not want a completion
@@ -47,6 +53,7 @@ const CreateCardPage = () => {
             toast.error("Please enter the front of the card first.");
             return;
         }
+        setLastFrontsidePrompt(front);
         setIsGenerating(true);
         try {
             let response: BacksideResponse;
@@ -59,7 +66,8 @@ const CreateCardPage = () => {
                 });
             }
             setBack(response.back);
-            setGeneratedTextPresent(true);
+            setChangesSinceLastGeneration(false);
+            setGeneratedTextInBack(true);
             setResponseMarkedHelpful(false);
         } catch {
             toast.error("Failed to generate backside. Please try again.");
@@ -78,7 +86,7 @@ const CreateCardPage = () => {
 
     const handleSaveAndExit = async () => {
         if (!deckId) {
-            toast.error("No deck selected.");
+            toast.error("Could not save card: No deck selected.");
             return;
         }
         setIsSaving(true);
@@ -94,13 +102,9 @@ const CreateCardPage = () => {
         }
     };
 
-    const handleAddAndContinue = async () => {
-        if (!front.trim() || !back.trim()) {
-            toast.error("Please fill in both the front and back of the card.");
-            return;
-        }
+    const handleSaveCard = async () => {
         if (!deckId) {
-            toast.error("No deck selected.");
+            toast.error("Could not save the card: No deck selected.");
             return;
         }
         setIsSaving(true);
@@ -114,6 +118,27 @@ const CreateCardPage = () => {
         } finally {
             setIsSaving(false);
         }
+    };
+
+    const handleAddAndContinueClicked = async () => {
+        if (!front.trim() || !back.trim()) {
+            toast.error("Please fill in both the front and back of the card.");
+            return;
+        }
+        if (!deckId) {
+            toast.error("No deck selected.");
+            return;
+        }
+        if (
+            generatedTextInBack &&
+            front.trim() !== lastFrontsidePrompt.trim()
+        ) {
+            // the frontside has changed since last generation
+            // potential mismatch of frontside and backside
+            setShowChangedFrontsideDialog(true);
+            return;
+        }
+        handleSaveCard();
     };
 
     // fall back to using API to get deck name if not stored in location state
@@ -149,7 +174,7 @@ const CreateCardPage = () => {
                 value={front}
                 onChange={(val) => {
                     setFront(val);
-                    setGeneratedTextPresent(false);
+                    setChangesSinceLastGeneration(true);
                     setResponseMarkedHelpful(false);
                 }}
                 onSubmit={
@@ -165,7 +190,8 @@ const CreateCardPage = () => {
                 value={back}
                 onChange={(val) => {
                     setBack(val);
-                    setGeneratedTextPresent(false);
+                    setChangesSinceLastGeneration(true);
+                    setGeneratedTextInBack(false);
                     setResponseMarkedHelpful(false);
                 }}
                 onRegenerate={handleGenerateBackside}
@@ -178,7 +204,7 @@ const CreateCardPage = () => {
                 onRapidModeToggle={() => {
                     setRapidModeEnabled((prev) => !prev);
                 }}
-                generatedTextPresent={generatedTextPresent}
+                changesSinceLastGeneration={changesSinceLastGeneration}
                 responseMarkedHelpful={responseMarkedHelpful}
                 onResponseMarkedHelpfulToggle={() => {
                     /* Currently the "Helpful" button is not connected to any API endpoint */
@@ -191,7 +217,10 @@ const CreateCardPage = () => {
                     <Button variant="outline" onClick={handleDoneClick}>
                         Done
                     </Button>
-                    <Button onClick={handleAddAndContinue} disabled={isSaving}>
+                    <Button
+                        onClick={handleAddAndContinueClicked}
+                        disabled={isSaving}
+                    >
                         {isSaving ? (
                             <Spinner className="h-4 w-4 mr-1" />
                         ) : (
@@ -208,6 +237,17 @@ const CreateCardPage = () => {
                 </p>
             </div>
 
+            <ChangedFrontsideConfirmationDialog
+                open={showChangedFrontsideDialog}
+                onOpenChange={setShowChangedFrontsideDialog}
+                onKeepAsIs={async () => {
+                    await handleSaveCard();
+                    setShowChangedFrontsideDialog(false);
+                }}
+                frontsidePrompt={lastFrontsidePrompt}
+                currentFrontside={front}
+                isSaving={isSaving}
+            />
             <ExitConfirmationDialog
                 open={showExitDialog}
                 onOpenChange={setShowExitDialog}

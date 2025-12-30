@@ -24,7 +24,7 @@ interface CardBacksideFieldProps {
     rapidModeEnabled: boolean;
     onRapidModeToggle: () => void;
     backsideTextareaRef?: Ref<HTMLTextAreaElement>;
-    generatedTextPresent?: boolean;
+    changesSinceLastGeneration?: boolean;
     responseMarkedHelpful: boolean;
     onResponseMarkedHelpfulToggle: () => void;
 }
@@ -39,7 +39,7 @@ const CardBacksideField = ({
     rapidModeEnabled,
     onRapidModeToggle,
     backsideTextareaRef,
-    generatedTextPresent,
+    changesSinceLastGeneration,
     responseMarkedHelpful,
     onResponseMarkedHelpfulToggle,
 }: CardBacksideFieldProps) => {
@@ -129,7 +129,7 @@ const CardBacksideField = ({
                             />
                         )}
                     </div>
-                    {generatedTextPresent && completionsEnabled && (
+                    {!changesSinceLastGeneration && completionsEnabled && (
                         <div className="flex gap-1">
                             <SubtleButton
                                 icon={ThumbsUp}
