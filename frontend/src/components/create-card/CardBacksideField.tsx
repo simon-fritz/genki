@@ -1,37 +1,173 @@
-import { useState } from "react";
-import { ThumbsUp, RefreshCw, MessageSquare, Bot, BotOff } from "lucide-react";
+import { type Ref } from "react";
+import {
+    ThumbsUp,
+    RefreshCw,
+    MessageSquare,
+    Bot,
+    BotOff,
+    Lightbulb,
+    ChevronsRight,
+} from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { SubtleButton } from "@/components/create-card/SubtleButton";
+import { Spinner } from "@/components/ui/spinner";
+import { toast } from "sonner";
+import { Info } from "lucide-react";
 
-const CardBacksideField = () => {
-    const [completionsEnabled, setCompletionsEnabled] = useState(true);
+interface CardBacksideFieldProps {
+    value: string;
+    onChange: (value: string) => void;
+    onRegenerate: () => void;
+    isGenerating?: boolean;
+    completionsEnabled: boolean;
+    onCompletionsToggle: () => void;
+    rapidModeEnabled: boolean;
+    onRapidModeToggle: () => void;
+    backsideTextareaRef?: Ref<HTMLTextAreaElement>;
+    changesSinceLastGeneration?: boolean;
+    responseMarkedHelpful: boolean;
+    onResponseMarkedHelpfulToggle: () => void;
+    showImprovementsPanel: boolean;
+    onToggleImprovementsPanel: () => void;
+}
 
+const CardBacksideField = ({
+    value,
+    onChange,
+    onRegenerate,
+    isGenerating = false,
+    completionsEnabled,
+    onCompletionsToggle,
+    rapidModeEnabled,
+    onRapidModeToggle,
+    backsideTextareaRef,
+    changesSinceLastGeneration,
+    responseMarkedHelpful,
+    onResponseMarkedHelpfulToggle,
+    showImprovementsPanel,
+    onToggleImprovementsPanel,
+}: CardBacksideFieldProps) => {
     return (
-        <FieldGroup className="my-2">
+        <FieldGroup>
             <Field>
-                <FieldLabel>Back of the card</FieldLabel>
+                <FieldLabel className="flex items-center gap-2">
+                    Back of the card
+                    {isGenerating && <Spinner />}
+                </FieldLabel>
                 <Textarea
-                    className="h-48 mt-2 mb-2"
-                    placeholder="The answer or definition will be generated here"
+                    ref={backsideTextareaRef}
+                    className="h-48"
+                    placeholder={
+                        completionsEnabled
+                            ? "The answer or definition will be generated here"
+                            : "Enter backside of the card or enable completions to autogenerate"
+                    }
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    disabled={isGenerating}
                 />
-                <div className="flex justify-between">
-                    <SubtleButton
-                        icon={completionsEnabled ? Bot : BotOff}
-                        text={
-                            completionsEnabled
-                                ? "Completions on"
-                                : "Completions off"
-                        }
-                        onClick={() =>
-                            setCompletionsEnabled(!completionsEnabled)
-                        }
-                    />
-                    {completionsEnabled && (
-                        <div className="flex gap-1">
-                            <SubtleButton icon={ThumbsUp} text="Helpful" />
-                            <SubtleButton icon={RefreshCw} text="Regenerate" />
-                            <SubtleButton icon={MessageSquare} text="Improve" />
+                <div className="flex justify-between -mt-2">
+                    <div className="flex gap-1">
+                        <SubtleButton
+                            icon={completionsEnabled ? Bot : BotOff}
+                            text={
+                                completionsEnabled
+                                    ? "Completions on"
+                                    : "Completions off"
+                            }
+                            onClick={() => {
+                                const nowEnabled = !completionsEnabled;
+                                const subtext = nowEnabled
+                                    ? "The backside of cards will be generated for you"
+                                    : "To generate answers with AI, reenable completions";
+                                toast(
+                                    <>
+                                        <div className="flex items-center gap-2">
+                                            <Info className="w-3 h-8" />
+                                            <p>
+                                                AI completions{" "}
+                                                {nowEnabled
+                                                    ? "enabled"
+                                                    : "disabled"}
+                                                .
+                                            </p>
+                                        </div>
+                                        <p className="text-xs text-gray-500">
+                                            {subtext}
+                                        </p>
+                                    </>,
+                                );
+                                onCompletionsToggle();
+                            }}
+                        />
+                        {completionsEnabled && (
+                            <SubtleButton
+                                icon={
+                                    rapidModeEnabled ? ChevronsRight : Lightbulb
+                                }
+                                text={
+                                    rapidModeEnabled
+                                        ? "Rapid mode"
+                                        : "Accuracy mode"
+                                }
+                                onClick={() => {
+                                    const nowRapid = !rapidModeEnabled;
+                                    const toptext = nowRapid ? (
+                                        <p>
+                                            Now using <b>rapid mode</b>.
+                                        </p>
+                                    ) : (
+                                        <p>
+                                            Now using <b>accuracy mode</b>.
+                                        </p>
+                                    );
+                                    const subtext = nowRapid
+                                        ? "Cards will be generated without specialized knowledge"
+                                        : "Uploaded files will be consulted to give better answers";
+                                    toast(
+                                        <>
+                                            <div className="flex items-center gap-2">
+                                                <Info className="w-3 h-8" />
+                                                {toptext}
+                                            </div>
+                                            <p className="text-xs text-gray-500">
+                                                {subtext}
+                                            </p>
+                                        </>,
+                                    );
+                                    onRapidModeToggle();
+                                }}
+                            />
+                        )}
+                    </div>
+                    {!changesSinceLastGeneration && completionsEnabled && (
+                        <div className="flex gap-1 items-start">
+                            <SubtleButton
+                                icon={ThumbsUp}
+                                fill={responseMarkedHelpful}
+                                text="Helpful"
+                                onClick={onResponseMarkedHelpfulToggle}
+                            />
+                            <SubtleButton
+                                icon={RefreshCw}
+                                text="Regenerate"
+                                onClick={onRegenerate}
+                            />
+                            <div
+                                className={`m-0 p-0 pb-2 -mb-1 ${showImprovementsPanel ? "bg-gray-100 rounded-t" : ""}`}
+                            >
+                                <SubtleButton
+                                    icon={MessageSquare}
+                                    text="Ask for improvements"
+                                    onClick={onToggleImprovementsPanel}
+                                    className={
+                                        showImprovementsPanel
+                                            ? "bg-gray-100"
+                                            : ""
+                                    }
+                                />
+                            </div>
                         </div>
                     )}
                 </div>

@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Routes, Route } from "react-router";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import GuestRoute from "@/components/auth/GuestRoute";
@@ -12,29 +12,35 @@ import CreateCardPage from "./pages/Deck/CreateCardPage";
 import { Toaster } from "@/components/ui/sonner";
 import "./index.css";
 
+const router = createBrowserRouter([
+    {
+        element: <MainLayout />,
+        children: [
+            {
+                element: <GuestRoute />,
+                children: [
+                    { path: "/login", element: <LoginPage /> },
+                    { path: "/register", element: <RegisterPage /> },
+                ],
+            },
+            {
+                element: <ProtectedRoute />,
+                children: [
+                    { index: true, element: <DashboardPage /> },
+                    { path: "/settings", element: <SettingsPage /> },
+                    {
+                        path: "/deck/:deckId/newcard",
+                        element: <CreateCardPage />,
+                    },
+                ],
+            },
+        ],
+    },
+]);
+
 createRoot(document.getElementById("root")!).render(
     <StrictMode>
         <Toaster position="top-center" />
-        <BrowserRouter>
-            <Routes>
-                <Route element={<MainLayout />}>
-                    {/* Guest (public) routes */}
-                    <Route element={<GuestRoute />}>
-                        <Route path="/login" element={<LoginPage />} />
-                        <Route path="/register" element={<RegisterPage />} />
-                    </Route>
-
-                    {/* Protected routes */}
-                    <Route element={<ProtectedRoute />}>
-                        <Route index element={<DashboardPage />} />
-                        <Route path="/settings" element={<SettingsPage />} />
-                        <Route
-                            path="/deck/:deckId/newcard"
-                            element={<CreateCardPage />}
-                        />
-                    </Route>
-                </Route>
-            </Routes>
-        </BrowserRouter>
+        <RouterProvider router={router} />
     </StrictMode>,
 );
