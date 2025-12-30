@@ -7,17 +7,30 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card";
-import React, { useState } from "react";
-import { useNavigate } from "react-router";
+import React, { useState, useEffect, useRef } from "react";
+import { useNavigate, useLocation } from "react-router";
 import { login as loginApi } from "@/api/auth";
 import { toast } from "sonner";
 
 function LoginPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const [usernameOrEmail, setUsernameOrEmail] = useState<string>("");
     const [password, setPassword] = useState<string>("");
     const [formError, setFormError] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(false);
+    const sessionExpiredToastShown = useRef(false);
+
+    useEffect(() => {
+        if (
+            location.state?.sessionExpired &&
+            !sessionExpiredToastShown.current
+        ) {
+            sessionExpiredToastShown.current = true;
+            toast.error("The session expired. Please log in again.");
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [location.state, navigate, location.pathname]);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
