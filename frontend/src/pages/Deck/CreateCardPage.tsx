@@ -1,4 +1,9 @@
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import {
+    useLocation,
+    useNavigate,
+    useParams,
+    useBlocker,
+} from "react-router-dom";
 import { Plus } from "lucide-react";
 import CardFrontsideField from "@/components/create-card/CardFrontsideField";
 import CardBacksideField from "@/components/create-card/CardBacksideField";
@@ -42,6 +47,30 @@ const CreateCardPage = () => {
     const [showChangedFrontsideDialog, setShowChangedFrontsideDialog] =
         useState(false);
 
+    // Block navigation when there's unsaved content
+    const hasUnsavedContent = !!(front.trim() || back.trim());
+    const blocker = useBlocker(hasUnsavedContent);
+
+    // Show exit dialog when navigation is blocked
+    useEffect(() => {
+        if (blocker.state === "blocked") {
+            setShowExitDialog(true);
+        }
+    }, [blocker.state]);
+
+    // Show browser confirmation when closing tab/reloading
+    useEffect(() => {
+        const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+            if (hasUnsavedContent) {
+                e.preventDefault();
+            }
+        };
+
+        window.addEventListener("beforeunload", handleBeforeUnload);
+        return () =>
+            window.removeEventListener("beforeunload", handleBeforeUnload);
+    }, [hasUnsavedContent]);
+
     // this function will call the right api based on rapidModeEnabled
     // it assumes completions are enabled, so do not call this if you do not want a completion
     const handleGenerateBackside = async () => {
@@ -76,14 +105,6 @@ const CreateCardPage = () => {
         }
     };
 
-    const handleDoneClick = () => {
-        if (front.trim() && back.trim()) {
-            setShowExitDialog(true);
-        } else {
-            navigate("/");
-        }
-    };
-
     const handleSaveAndExit = async () => {
         if (!deckId) {
             toast.error("Could not save card: No deck selected.");
@@ -94,7 +115,14 @@ const CreateCardPage = () => {
             await createCard({ deck: deckId, front, back });
             toast.success("Card saved successfully!");
             setShowExitDialog(false);
-            navigate("/");
+            // Clear content so blocker doesn't trigger again
+            setFront("");
+            setBack("");
+            if (blocker.state === "blocked") {
+                blocker.proceed();
+            } else {
+                navigate("/");
+            }
         } catch {
             toast.error("Failed to save the card. Please try again.");
         } finally {
@@ -214,7 +242,7 @@ const CreateCardPage = () => {
             />
             <div className="flex flex-col items-end mt-4">
                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={handleDoneClick}>
+                    <Button variant="outline" onClick={() => navigate("/")}>
                         Done
                     </Button>
                     <Button
@@ -250,12 +278,26 @@ const CreateCardPage = () => {
             />
             <ExitConfirmationDialog
                 open={showExitDialog}
-                onOpenChange={setShowExitDialog}
-                onKeepEditing={() => setShowExitDialog(false)}
+                onOpenChange={(open) => {
+                    setShowExitDialog(open);
+                    if (!open && blocker.state === "blocked") {
+                        blocker.reset();
+                    }
+                }}
+                onKeepEditing={() => {
+                    setShowExitDialog(false);
+                    if (blocker.state === "blocked") {
+                        blocker.reset();
+                    }
+                }}
                 onExitWithoutSaving={() => {
                     setShowExitDialog(false);
                     toast("Card discarded");
-                    navigate("/");
+                    if (blocker.state === "blocked") {
+                        blocker.proceed();
+                    } else {
+                        navigate("/");
+                    }
                 }}
                 onSaveAndExit={handleSaveAndExit}
                 isSaving={isSaving}
