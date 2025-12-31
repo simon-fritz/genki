@@ -10,7 +10,8 @@ import CardBacksideField from "@/components/create-card/CardBacksideField";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import ExitConfirmationDialog from "@/components/create-card/ExitConfirmationDialog";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import type { MarkdownEditorRef } from "@/components/ui/markdown-editor";
 import { getDeck } from "@/api/decks.ts";
 import {
     getBacksideRapidMode,
@@ -44,7 +45,7 @@ const CreateCardPage = () => {
     const [showExitDialog, setShowExitDialog] = useState(false);
     const [completionsEnabled, setCompletionsEnabled] = useState(true);
     const [rapidModeEnabled, setRapidModeEnabled] = useState(false);
-    const backsideTextareaRef = useRef<HTMLTextAreaElement>(null);
+    const backsideEditorRef = useRef<MarkdownEditorRef>(null);
     const [changesSinceLastGeneration, setChangesSinceLastGeneration] =
         useState(true);
     const [responseMarkedHelpful, setResponseMarkedHelpful] = useState(false);
@@ -283,13 +284,13 @@ const CreateCardPage = () => {
                 onSubmit={
                     completionsEnabled
                         ? handleGenerateBackside
-                        : () => backsideTextareaRef.current?.focus()
+                        : () => backsideEditorRef.current?.focus()
                 }
                 isGenerating={isGenerating}
                 completionsEnabled={completionsEnabled}
             />
             <CardBacksideField
-                backsideTextareaRef={backsideTextareaRef}
+                ref={backsideEditorRef}
                 value={back}
                 onChange={(val) => {
                     setBack(val);

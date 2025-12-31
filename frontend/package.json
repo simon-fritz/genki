@@ -18,6 +18,10 @@
         "@radix-ui/react-slider": "^1.3.6",
         "@radix-ui/react-slot": "^1.2.4",
         "@tailwindcss/vite": "^4.1.17",
+        "@tiptap/extension-placeholder": "^3.14.0",
+        "@tiptap/pm": "^3.14.0",
+        "@tiptap/react": "^3.14.0",
+        "@tiptap/starter-kit": "^3.14.0",
         "axios": "^1.13.2",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
@@ -29,7 +33,8 @@
         "react-router-dom": "^7.11.0",
         "sonner": "^2.0.7",
         "tailwind-merge": "^3.4.0",
-        "tailwindcss": "^4.1.17"
+        "tailwindcss": "^4.1.17",
+        "tiptap-markdown": "^0.9.0"
     },
     "devDependencies": {
         "@eslint/js": "^9.39.1",
