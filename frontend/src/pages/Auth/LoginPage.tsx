@@ -1,16 +1,15 @@
-import {
-    Card,
-    CardAction,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate, useLocation } from "react-router";
+import { useNavigate, useLocation, Link } from "react-router";
 import { login as loginApi } from "@/api/auth";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import {
+    Field,
+    FieldLabel,
+    FieldError,
+    FieldGroup,
+} from "@/components/ui/field";
 
 function LoginPage() {
     const navigate = useNavigate();
@@ -53,72 +52,54 @@ function LoginPage() {
     };
 
     return (
-        <div className="p-10 max-w-[800px] mx-auto">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Sign in</CardTitle>
-                    <CardDescription>
-                        Enter your credentials to continue.
-                    </CardDescription>
-                    <CardAction />
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Username or Email
-                            </label>
-                            <input
-                                value={usernameOrEmail}
-                                onChange={(e) =>
-                                    setUsernameOrEmail(e.target.value)
-                                }
-                                className="w-full border rounded px-3 py-2"
-                                placeholder="username or email"
-                                autoComplete="username"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium mb-1">
-                                Password
-                            </label>
-                            <input
-                                type="password"
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                className="w-full border rounded px-3 py-2"
-                                placeholder="password"
-                                autoComplete="current-password"
-                            />
-                        </div>
+        <div className="p-10 max-w-6xl mx-auto">
+            <h1 className="text-2xl font-bold mb-2">Sign in</h1>
+            <p className="text-muted-foreground mb-6">
+                Enter your credentials to continue.
+            </p>
 
-                        {formError && (
-                            <div className="text-sm text-red-600">
-                                {formError}
-                            </div>
-                        )}
-                        {/* error from useAuth removed */}
+            <form onSubmit={handleSubmit}>
+                <FieldGroup>
+                    <Field>
+                        <FieldLabel>Username or Email</FieldLabel>
+                        <Input
+                            value={usernameOrEmail}
+                            onChange={(e) => setUsernameOrEmail(e.target.value)}
+                            placeholder="username or email"
+                            autoComplete="username"
+                        />
+                    </Field>
+                    <Field>
+                        <FieldLabel>Password</FieldLabel>
+                        <Input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="password"
+                            autoComplete="current-password"
+                        />
+                    </Field>
+                </FieldGroup>
 
-                        <div>
-                            <button
-                                type="submit"
-                                className="w-full bg-blue-600 text-white rounded px-4 py-2"
-                                disabled={loading}
-                            >
-                                {loading ? "Logging in..." : "Log in"}
-                            </button>
-                        </div>
-                    </form>
-                </CardContent>
-                <CardFooter>
-                    <p className="text-sm text-muted-foreground">
-                        Need an account?{" "}
-                        <a href="/register" className="text-blue-600">
-                            Register
-                        </a>
-                    </p>
-                </CardFooter>
-            </Card>
+                {formError && (
+                    <FieldError className="mt-4">{formError}</FieldError>
+                )}
+
+                <Button
+                    type="submit"
+                    className="w-full mt-6"
+                    disabled={loading}
+                >
+                    {loading ? "Logging in..." : "Log in"}
+                </Button>
+            </form>
+
+            <p className="text-sm text-muted-foreground mt-6">
+                Need an account?{" "}
+                <Link to="/register" className="text-primary hover:underline">
+                    Register
+                </Link>
+            </p>
         </div>
     );
 }

@@ -1,15 +1,7 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router";
-import {
-    Card,
-    CardAction,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
-import { Input } from "../../components/ui/input.tsx";
+import { useNavigate, Link } from "react-router";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
     Field,
@@ -61,7 +53,6 @@ function RegisterPage() {
             );
             navigate("/login", { state: { registered: true } });
         } catch (err: any) {
-            // Axios 400 error: no content, so we show a generic error
             if (err?.response?.status === 400) {
                 setError("Registration failed. Please check your input.");
             } else {
@@ -73,104 +64,91 @@ function RegisterPage() {
     };
 
     return (
-        <div className="p-10 max-w-[800px] mx-auto">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Create Account</CardTitle>
-                    <CardDescription>Sign up to get started.</CardDescription>
-                    <CardAction />
-                </CardHeader>
+        <div className="p-10 max-w-6xl mx-auto">
+            <h1 className="text-2xl font-bold mb-2">Create Account</h1>
+            <p className="text-muted-foreground mb-6">
+                Sign up to get started.
+            </p>
 
-                <CardContent>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                        <FieldGroup>
-                            <Field>
-                                <FieldLabel>Username</FieldLabel>
-                                <Input
-                                    value={username}
-                                    onChange={(e) =>
-                                        setUsername(e.target.value)
-                                    }
-                                    placeholder="username"
-                                    autoComplete="username"
-                                />
-                                <FieldError>{fieldErrors.username}</FieldError>
-                            </Field>
-                            <Field>
-                                <FieldLabel>Email</FieldLabel>
-                                <Input
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    placeholder="email@example.com"
-                                    autoComplete="email"
-                                />
-                                <FieldError>{fieldErrors.email}</FieldError>
-                            </Field>
-                            <Field>
-                                <FieldLabel>Password</FieldLabel>
-                                <Input
-                                    type="password"
-                                    value={password}
-                                    onChange={(e) =>
-                                        setPassword(e.target.value)
-                                    }
-                                    placeholder="password"
-                                    autoComplete="new-password"
-                                />
-                                <FieldError>{fieldErrors.password}</FieldError>
-                            </Field>
-                            <Field>
-                                <FieldLabel>Confirm Password</FieldLabel>
-                                <Input
-                                    type="password"
-                                    value={password2}
-                                    onChange={(e) =>
-                                        setPassword2(e.target.value)
-                                    }
-                                    placeholder="confirm password"
-                                    autoComplete="new-password"
-                                />
-                                <FieldError>{fieldErrors.password2}</FieldError>
-                            </Field>
-                        </FieldGroup>
-                        <FieldSeparator />
-                        <Field>
-                            <div className="flex items-center space-x-2">
-                                <Checkbox
-                                    id="terms"
-                                    checked={agreeTerms}
-                                    onCheckedChange={(checked) =>
-                                        setAgreeTerms(checked as boolean)
-                                    }
-                                />
-                                <FieldLabel htmlFor="terms">
-                                    I agree to the terms and conditions
-                                </FieldLabel>
-                            </div>
-                        </Field>
-                        {error && <FieldError>{error}</FieldError>}
-                        <div>
-                            <button
-                                type="submit"
-                                className="w-full bg-blue-600 text-white rounded px-4 py-2 disabled:opacity-50"
-                                disabled={loading}
-                            >
-                                {loading ? "Creating account..." : "Register"}
-                            </button>
-                        </div>
-                    </form>
-                </CardContent>
+            <form onSubmit={handleSubmit}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Field>
+                        <FieldLabel>Username</FieldLabel>
+                        <Input
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            placeholder="username"
+                            autoComplete="username"
+                        />
+                        <FieldError>{fieldErrors.username}</FieldError>
+                    </Field>
+                    <Field>
+                        <FieldLabel>Email</FieldLabel>
+                        <Input
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="email@example.com"
+                            autoComplete="email"
+                        />
+                        <FieldError>{fieldErrors.email}</FieldError>
+                    </Field>
+                    <Field>
+                        <FieldLabel>Password</FieldLabel>
+                        <Input
+                            type="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            placeholder="password"
+                            autoComplete="new-password"
+                        />
+                        <FieldError>{fieldErrors.password}</FieldError>
+                    </Field>
+                    <Field>
+                        <FieldLabel>Confirm Password</FieldLabel>
+                        <Input
+                            type="password"
+                            value={password2}
+                            onChange={(e) => setPassword2(e.target.value)}
+                            placeholder="confirm password"
+                            autoComplete="new-password"
+                        />
+                        <FieldError>{fieldErrors.password2}</FieldError>
+                    </Field>
+                </div>
 
-                <CardFooter>
-                    <p className="text-sm text-muted-foreground">
-                        Already have an account?{" "}
-                        <a href="/login" className="text-blue-600">
-                            Log in
-                        </a>
-                    </p>
-                </CardFooter>
-            </Card>
+                <FieldSeparator className="my-6" />
+
+                <Field orientation="horizontal">
+                    <Checkbox
+                        id="terms"
+                        checked={agreeTerms}
+                        onCheckedChange={(checked) =>
+                            setAgreeTerms(checked as boolean)
+                        }
+                    />
+                    <FieldLabel htmlFor="terms">
+                        I agree to the terms and conditions
+                    </FieldLabel>
+                </Field>
+
+                {error && <FieldError className="mt-4">{error}</FieldError>}
+
+                <Button
+                    type="submit"
+                    className="w-full mt-6"
+                    disabled={loading}
+                >
+                    {loading ? "Creating account..." : "Register"}
+                </Button>
+            </form>
+
+            <p className="text-sm text-muted-foreground mt-6">
+                Already have an account?{" "}
+                <Link to="/login" className="text-primary hover:underline">
+                    Log in
+                </Link>
+            </p>
         </div>
     );
 }
