@@ -62,7 +62,6 @@ const CardBacksideField = forwardRef<MarkdownEditorRef, CardBacksideFieldProps>(
                     </FieldLabel>
                     <MarkdownEditor
                         ref={ref}
-                        className="h-48"
                         placeholder={
                             completionsEnabled
                                 ? "The answer or definition will be generated here"
@@ -72,7 +71,7 @@ const CardBacksideField = forwardRef<MarkdownEditorRef, CardBacksideFieldProps>(
                         onChange={onChange}
                         disabled={isGenerating}
                     />
-                    <div className="flex justify-between -mt-2">
+                    <div className="flex justify-between -mt-2 items-start">
                         <div className="flex gap-1">
                             <SubtleButton
                                 icon={completionsEnabled ? Bot : BotOff}
@@ -162,7 +161,7 @@ const CardBacksideField = forwardRef<MarkdownEditorRef, CardBacksideFieldProps>(
                                     onClick={onRegenerate}
                                 />
                                 <div
-                                    className={`m-0 p-0 pb-2 -mb-1 ${showImprovementsPanel ? "bg-gray-100 rounded-t" : ""}`}
+                                    className={`m-0 p-0 ${showImprovementsPanel ? "pb-2 -mb-1 bg-gray-100 rounded-t" : ""}`}
                                 >
                                     <SubtleButton
                                         icon={MessageSquare}
