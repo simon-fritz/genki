@@ -1,5 +1,5 @@
-from django.db import models
 from django.conf import settings
+from django.db import models
 from django.utils import timezone
 
 
@@ -52,6 +52,11 @@ class Deck(models.Model):
 
     class Meta:
         ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user", "name"], name="unique_deck_name_per_user"
+            )
+        ]
 
 
 class Card(models.Model):

@@ -2,22 +2,26 @@
 
 from datetime import timedelta
 
+from accounts.models import UserProfile
+from accounts.services.preferences import update_profile_from_review
 from django.utils import timezone
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from rest_framework import viewsets, status
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
-from .models import Deck, Card
-from .serializers import DeckSerializer, CardSerializer, CardReviewSerializer
 from uploads.serializers import DeckDocumentUploadSerializer
 from uploads.services.document_ingestion import DocumentIngestionError, ingest_document
 
-from accounts.models import UserProfile
-from accounts.services.preferences import update_profile_from_review
+from .models import Card, Deck
+from .serializers import (
+    CardReviewSerializer,
+    CardSerializer,
+    DeckSerializer,
+    DuplicateDeckNameError,
+)
 
 
 class DeckViewSet(viewsets.ModelViewSet):
@@ -38,6 +42,37 @@ class DeckViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         """Automatically set the deck owner to the current user on creation."""
         serializer.save(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        """Create a deck, returning 409 if name is duplicate."""
+        serializer = self.get_serializer(data=request.data)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except DuplicateDeckNameError as exc:
+            return Response(
+                {"error": "DUPLICATE_DECK_NAME", "message": str(exc)},
+                status=status.HTTP_409_CONFLICT,
+            )
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
+
+    def update(self, request, *args, **kwargs):
+        """Update a deck, returning 409 if name is duplicate."""
+        partial = kwargs.pop("partial", False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except DuplicateDeckNameError as exc:
+            return Response(
+                {"error": "DUPLICATE_DECK_NAME", "message": str(exc)},
+                status=status.HTTP_409_CONFLICT,
+            )
+        self.perform_update(serializer)
+        return Response(serializer.data)
 
     @swagger_auto_schema(
         method="post",

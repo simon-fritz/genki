@@ -3,6 +3,12 @@ from rest_framework import serializers
 from .models import Card, Deck
 
 
+class DuplicateDeckNameError(Exception):
+    """Raised when a user attempts to create a deck with a duplicate name."""
+
+    pass
+
+
 class DeckSerializer(serializers.ModelSerializer):
     """Lightweight deck serializer for CRUD."""
 
@@ -16,6 +22,23 @@ class DeckSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
+
+    def validate_name(self, value):
+        """Ensure deck name is unique for the current user."""
+        request = self.context.get("request")
+        if not request or not request.user:
+            return value
+
+        queryset = Deck.objects.filter(user=request.user, name=value)
+
+        # Exclude current instance when updating
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+
+        if queryset.exists():
+            raise DuplicateDeckNameError("You already have a deck with this name.")
+
+        return value
 
 
 class CardSerializer(serializers.ModelSerializer):
