@@ -7,7 +7,6 @@ import {
     Field,
     FieldLabel,
     FieldError,
-    FieldGroup,
     FieldSeparator,
 } from "@/components/ui/field";
 import { register } from "@/api/auth";

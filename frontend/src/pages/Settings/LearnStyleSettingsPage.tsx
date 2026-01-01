@@ -45,41 +45,13 @@ function SettingsPage() {
     const [equations, setEquations] = useState(2);
     const [examples, setExamples] = useState(2);
     const [explanations, setExplanations] = useState(2);
-    const [documents, setDocuments] = useState(2);
     const [customInstructions, setCustomInstructions] = useState("");
     const [saving, setSaving] = useState(false);
 
     const handleSave = async () => {
         setSaving(true);
-        try {
-            const data = {
-                textLength,
-                equations,
-                examples,
-                explanations,
-                documents,
-                customInstructions,
-            };
-
-            const response = await fetch("/api/settings/learning-style", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(data),
-            });
-
-            if (response.ok) {
-                alert("Settings saved successfully!");
-            } else {
-                alert("Failed to save settings");
-            }
-        } catch (error) {
-            console.error("Error saving settings:", error);
-            alert("Error saving settings");
-        } finally {
-            setSaving(false);
-        }
+        // TODO implement api calls here
+        setSaving(false);
     };
 
     return (
