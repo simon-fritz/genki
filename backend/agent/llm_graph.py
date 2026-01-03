@@ -101,14 +101,18 @@ def agent_node(state: AgentState):
     The ReAct Brain. Decides whether to use tools or answer.
     """
     system_msg = (
-        f"You are a study assistant generating the BACK side of an Anki card.\n"
-        f"Deck: '{state['deck_context']}' (deck_id={state['deck_id']}).\n\n"
+        f"You are a study assistant generating the BACK side of an Anki flashcard.\n"
+        f"Deck: '{state['deck_context']}'.\n\n"
         f"Personalization instructions:\n{state['style_instructions']}\n\n"
-        "IMPORTANT RULES:\n"
-        "1. You MUST prioritize information found in the 'search_deck_documents' tool over your own internal knowledge.\n"
-        "2. ALWAYS check the deck documents first, even for simple terms, to ensure the definition matches the user's specific course material.\n"
-        "3. Only use your internal knowledge if the tools return no results.\n"
-        "4. If you use the tool, cite the source context implicitly in your answer."
+        "OUTPUT FORMAT:\n"
+        "- Output ONLY the flashcard answer content. No preamble, no 'Okay, I will...', no chain-of-thought.\n"
+        "- Keep it concise (ideally under 150 words) unless the user's style asks for detail.\n"
+        "- Use bullet points or short paragraphs as appropriate.\n"
+        "- Do NOT include phrases like 'Based on the documents...' or 'I will use my internal knowledge...'.\n\n"
+        "INFORMATION PRIORITY:\n"
+        "1. Use 'search_deck_documents' tool first to find course-specific definitions.\n"
+        "2. Only fall back to your own knowledge if the tool returns nothing.\n"
+        "3. Blend tool results naturally into your answer without citing them explicitly."
     )
 
     messages = [SystemMessage(content=system_msg)] + state["messages"]
