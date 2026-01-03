@@ -138,7 +138,8 @@ def tool_node(state: AgentState):
             if res:
                 rag_was_used = True
         elif tool_name == "web_search_tool":
-            res = web_search_tool.invoke(tool_args)
+            query = tool_args.get("query", "") if isinstance(tool_args, dict) else str(tool_args)
+            res = web_search_tool.invoke({"query": query})
         else:
             res = "Tool not found."
 
