@@ -93,4 +93,7 @@ class TestWebSearchTool:
         ]
 
         result = web_search_tool.invoke({"query": "what is mitosis"})
-        assert len(result) == 2
+        # web_search_tool returns a string representation of the results
+        assert isinstance(result, str)
+        assert "Result 1" in result
+        assert "Result 2" in result
