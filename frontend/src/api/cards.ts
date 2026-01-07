@@ -83,3 +83,68 @@ export async function createCard(cardData: CardToCreate): Promise<Card> {
     };
     return card;
 }
+
+/* Fetch cards for a specific deck
+ */
+export async function getCardsByDeck(deckId: string): Promise<Card[]> {
+    const response = await api.get<CardRaw[]>(`/cards/?deck=${deckId}`);
+    const cards = response.data.map((cardRaw) => ({
+        id: cardRaw.id.toString(),
+        deck: cardRaw.deck.toString(),
+        front: cardRaw.front,
+        back: cardRaw.back,
+        generationMeta: cardRaw.generation_meta,
+        dueAt: new Date(cardRaw.due_at),
+        interval: cardRaw.interval,
+        easeFactor: cardRaw.ease_factor,
+        repetitions: cardRaw.repetitions,
+        lapses: cardRaw.lapses,
+        createdAt: new Date(cardRaw.created_at),
+        updatedAt: new Date(cardRaw.updated_at),
+    }));
+    return cards;
+}
+
+/* Fetch cards that are currently due for review
+ */
+export async function getDueCards(): Promise<Card[]> {
+    const response = await api.get<CardRaw[]>("/cards/due/");
+    const cards = response.data.map((cardRaw) => ({
+        id: cardRaw.id.toString(),
+        deck: cardRaw.deck.toString(),
+        front: cardRaw.front,
+        back: cardRaw.back,
+        generationMeta: cardRaw.generation_meta,
+        dueAt: new Date(cardRaw.due_at),
+        interval: cardRaw.interval,
+        easeFactor: cardRaw.ease_factor,
+        repetitions: cardRaw.repetitions,
+        lapses: cardRaw.lapses,
+        createdAt: new Date(cardRaw.created_at),
+        updatedAt: new Date(cardRaw.updated_at),
+    }));
+    return cards;
+}
+
+/* Submit a review rating for a card
+ * Rating: 0 = Again, 1 = Hard, 2 = Good, 3 = Easy
+ */
+export async function reviewCard(cardId: string, rating: number): Promise<Card> {
+    const response = await api.post<CardRaw>(`/cards/${cardId}/review/`, { rating });
+    const cardRaw = response.data;
+    const card: Card = {
+        id: cardRaw.id.toString(),
+        deck: cardRaw.deck.toString(),
+        front: cardRaw.front,
+        back: cardRaw.back,
+        generationMeta: cardRaw.generation_meta,
+        dueAt: new Date(cardRaw.due_at),
+        interval: cardRaw.interval,
+        easeFactor: cardRaw.ease_factor,
+        repetitions: cardRaw.repetitions,
+        lapses: cardRaw.lapses,
+        createdAt: new Date(cardRaw.created_at),
+        updatedAt: new Date(cardRaw.updated_at),
+    };
+    return card;
+}

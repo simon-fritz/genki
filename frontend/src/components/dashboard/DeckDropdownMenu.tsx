@@ -68,7 +68,7 @@ const DeckDropdownMenu = ({ deck, onDeckUpdated }: DeckDropdownMenuProps) => {
                 </DropdownMenuTrigger>
 
                 {/* content of the dropdown menu */}
-                <DropdownMenuContent align="end" className="w-60">
+                <DropdownMenuContent align="end" className="w-60" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenuItem
                         onSelect={() =>
                             navigate(`/deck/${deck.id}/newcard`, {

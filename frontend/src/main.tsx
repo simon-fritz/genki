@@ -9,6 +9,7 @@ import SettingsPage from "@/pages/Settings/LearnStyleSettingsPage";
 import LoginPage from "@/pages/Auth/LoginPage";
 import RegisterPage from "@/pages/Auth/RegisterPage";
 import CreateCardPage from "./pages/Deck/CreateCardPage";
+import StudyPage from "./pages/Deck/DeckStudyPage";
 import { Toaster } from "@/components/ui/sonner";
 import "./index.css";
 
@@ -23,6 +24,9 @@ const router = createBrowserRouter([
                     { path: "/register", element: <RegisterPage /> },
                 ],
             },
+
+            { path: "/deck/:deckId/study", element: <StudyPage /> },
+            
             {
                 element: <ProtectedRoute />,
                 children: [

@@ -10,13 +10,21 @@ class AgentConfig(AppConfig):
     name = "agent"
 
     def ready(self):
-        # Do not block tests/CI/management commands
-        if os.getenv("CI") == "true":
-            return
-        if "pytest" in sys.modules:
-            return
-        if "test" in sys.argv:
-            return
+            # Do not block tests/CI/management commands
+            if os.getenv("CI") == "true":
+                return
+            if "pytest" in sys.modules:
+                return
+            if "test" in sys.argv:
+                return
+            # --- NEW LINES START HERE ---
+            if "migrate" in sys.argv:
+                return
+            if "makemigrations" in sys.argv:
+                return
+            if "collectstatic" in sys.argv:
+                return
+            # --- NEW LINES END HERE ---
 
-        if not getattr(settings, "GEMINI_API_KEY", ""):
-            raise ImproperlyConfigured("GEMINI_API_KEY is required for the agent module")
+            if not getattr(settings, "GEMINI_API_KEY", ""):
+                raise ImproperlyConfigured("GEMINI_API_KEY is required for the agent module")

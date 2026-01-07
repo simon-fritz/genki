@@ -4,11 +4,13 @@ import CreateDeckButton from "@/components/dashboard/CreateDeckButton";
 import { BookOpen } from "lucide-react";
 import { getDecks } from "@/api/decks";
 import type { Deck } from "@/api/decks";
+import { getCardsByDeck } from "@/api/cards";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { toast } from "sonner";
 
 const DashboardPage = () => {
     const [decksFetched, setDecksFetched] = useState<Deck[]>([]);
+    const [deckDueCounts, setDeckDueCounts] = useState<Record<string, number>>({});
     const [fetchError, setFetchError] = useState(false);
     const errorToastShown = useRef(false);
 
@@ -24,32 +26,45 @@ const DashboardPage = () => {
         return "User";
     }, []);
 
-    const fetchDecks = () => {
-        getDecks()
-            .then((data) => {
-                setDecksFetched(data);
-                setFetchError(false);
-                errorToastShown.current = false;
-            })
-            .catch(() => {
-                setFetchError(true);
-                if (!errorToastShown.current) {
-                    errorToastShown.current = true;
-                    toast.error("Failed to fetch decks. Please try again.");
-                }
-            });
+    const fetchDecks = async () => {
+        try {
+            const data = await getDecks();
+            setDecksFetched(data);
+            setFetchError(false);
+            errorToastShown.current = false;
+
+            // Fetch due cards count for each deck
+            const counts: Record<string, number> = {};
+            const now = new Date();
+            await Promise.all(
+                data.map(async (deck) => {
+                    try {
+                        const cards = await getCardsByDeck(deck.id);
+                        const dueCards = cards.filter(card => card.dueAt <= now);
+                        counts[deck.id] = dueCards.length;
+                    } catch {
+                        counts[deck.id] = 0;
+                    }
+                })
+            );
+            setDeckDueCounts(counts);
+        } catch {
+            setFetchError(true);
+            if (!errorToastShown.current) {
+                errorToastShown.current = true;
+                toast.error("Failed to fetch decks. Please try again.");
+            }
+        }
     };
 
     useEffect(() => {
         fetchDecks();
     }, []);
 
-    // set new, learn, due to 0 for now because not provided by api
+    // Map decks with their due counts
     const decks = decksFetched.map((deck) => ({
         ...deck,
-        cardsNew: 0,
-        cardsLearn: 0,
-        cardsDue: 0,
+        cardsDue: deckDueCounts[deck.id] || 0,
     }));
 
     return (
@@ -102,10 +117,6 @@ const DashboardPage = () => {
                         <div className="hidden md:flex justify-between items-center text-sm font-medium text-gray-500 mb-2 border-b pb-1 my-2">
                             <span className="flex-1">Deck Name</span>
                             <div className="flex items-center space-x-4 ml-4">
-                                <span className="min-w-6 text-right">New</span>
-                                <span className="min-w-6 text-right">
-                                    Learn
-                                </span>
                                 <span className="min-w-6 text-right">Due</span>
                                 <span className="w-9 ml-2"></span>
                                 {/* Placeholder for the dropdown menu icon */}
@@ -118,8 +129,6 @@ const DashboardPage = () => {
                                 <DeckButton
                                     key={deck.id}
                                     deck={deck}
-                                    cardsNew={deck.cardsNew}
-                                    cardsLearn={deck.cardsLearn}
                                     cardsDue={deck.cardsDue}
                                     onDeckUpdated={fetchDecks}
                                 />
