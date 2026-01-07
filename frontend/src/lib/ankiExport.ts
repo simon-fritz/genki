@@ -10,7 +10,7 @@ interface AnkiDeck {
 export async function exportToApkg(deck: AnkiDeck): Promise<Blob> {
     // Initialize SQL.js
     const SQL = await initSqlJs({
-        locateFile: (file) => `https://sql.js.org/dist/${file}`
+        locateFile: (file: string) => `https://sql.js.org/dist/${file}`
     });
 
     // Create a new database
