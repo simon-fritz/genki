@@ -25,6 +25,7 @@
         "axios": "^1.13.2",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
+        "jszip": "^3.10.1",
         "lucide-react": "^0.555.0",
         "next-themes": "^0.4.6",
         "react": "^19.2.0",
@@ -32,6 +33,7 @@
         "react-router": "^7.10.1",
         "react-router-dom": "^7.11.0",
         "sonner": "^2.0.7",
+        "sql.js": "^1.13.0",
         "tailwind-merge": "^3.4.0",
         "tailwindcss": "^4.1.17",
         "tiptap-markdown": "^0.9.0"

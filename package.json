@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "sonner": "^2.0.7"
+    "sonner": "^2.0.7",
+    "sql": "^0.78.0"
   }
 }

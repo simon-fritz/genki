@@ -21,6 +21,9 @@ import { RagUpload } from "@/components/dashboard/RagUpload";
 import DeckEditDialog from "@/components/dashboard/DeckEditDialog";
 import type { Deck } from "@/api/decks";
 import DeckDeleteDialog from "@/components/dashboard/DeckDeleteDialog";
+import { getCardsByDeck } from "@/api/cards";
+import { exportToApkg, downloadApkg } from "@/lib/ankiExport";
+import { toast } from "sonner";
 
 interface DeckDropdownMenuProps {
     deck: Deck;
@@ -32,6 +35,20 @@ const DeckDropdownMenu = ({ deck, onDeckUpdated }: DeckDropdownMenuProps) => {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
     const navigate = useNavigate();
+
+    const handleExport = async () => {
+        try {
+            toast.info("Preparing deck export...");
+            const cards = await getCardsByDeck(deck.id);
+            const blob = await exportToApkg({ name: deck.name, cards });
+            downloadApkg(blob, deck.name);
+            toast.success("Deck exported successfully!");
+        } catch (err) {
+            console.error("Error exporting deck:", err);
+            toast.error("Failed to export deck");
+        }
+    };
+
     return (
         <>
             <DeckEditDialog
@@ -97,12 +114,14 @@ const DeckDropdownMenu = ({ deck, onDeckUpdated }: DeckDropdownMenuProps) => {
                         <span>Copy deck</span>
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem>
+                    <DropdownMenuItem
+                        onSelect={() => navigate(`/deck/${deck.id}/manage`)}
+                    >
                         <TableProperties className="mr-2 h-4 w-4" />
                         <span>Manage cards</span>
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onSelect={handleExport}>
                         <Download className="mr-2 h-4 w-4" />
                         <span>Download .apkg</span>
                     </DropdownMenuItem>

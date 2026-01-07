@@ -10,6 +10,7 @@ import LoginPage from "@/pages/Auth/LoginPage";
 import RegisterPage from "@/pages/Auth/RegisterPage";
 import CreateCardPage from "./pages/Deck/CreateCardPage";
 import StudyPage from "./pages/Deck/DeckStudyPage";
+import ManageCardsPage from "./pages/Deck/ManageCardsPage";
 import { Toaster } from "@/components/ui/sonner";
 import "./index.css";
 
@@ -35,6 +36,10 @@ const router = createBrowserRouter([
                     {
                         path: "/deck/:deckId/newcard",
                         element: <CreateCardPage />,
+                    },
+                    {
+                        path: "/deck/:deckId/manage",
+                        element: <ManageCardsPage />,
                     },
                 ],
             },
