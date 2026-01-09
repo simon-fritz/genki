@@ -242,7 +242,12 @@ class CardViewSet(viewsets.ModelViewSet):
         try:
             profile, _ = UserProfile.objects.get_or_create(user=request.user)
             if profile.preferences.get("auto_tune", True):
-                update_profile_from_review(profile, rating, features_used)
+                update_profile_from_review(
+                    profile,
+                    rating,
+                    features_used,
+                    weight=0.2,
+                )
         except Exception:
             # never block studying if tuning fails
             pass
