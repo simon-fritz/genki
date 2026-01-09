@@ -8,6 +8,7 @@ from rest_framework import status
 from rest_framework.test import APIClient
 from django.contrib.auth.models import User
 
+from accounts.models import UserProfile
 from cards.models import Deck
 
 
@@ -134,6 +135,51 @@ class TestFlashcardBacksideView:
             )
 
             assert response.status_code == status.HTTP_200_OK
+
+@pytest.mark.django_db
+class TestFlashcardBacksideRevisionView:
+    """Tests for FlashcardBacksideRevisionView endpoint."""
+
+    @patch("agent.llm_graph.app.invoke")
+    @patch("agent.views._suggest_revision_weight_patch")
+    def test_revision_updates_weights(
+        self,
+        mock_weight_patch,
+        mock_invoke,
+        authenticated_client,
+        test_deck,
+        test_user,
+    ):
+        """Should update profile weights after revision."""
+        profile, _ = UserProfile.objects.get_or_create(user=test_user)
+        profile.weights = {"examples": 0.4}
+        profile.save()
+
+        mock_invoke.return_value = {
+            "is_safe": True,
+            "final_json": {
+                "front": "What is Python?",
+                "back": "Revised answer",
+                "tags": [],
+                "generation_meta": {"rag_used": False},
+            },
+        }
+        mock_weight_patch.return_value = {"weights_patch": {"examples": 0.2}}
+
+        response = authenticated_client.post(
+            "/api/agent/flashcard/backside/revise/",
+            {
+                "front": "What is Python?",
+                "previous_backside": "Old answer",
+                "feedback": "Add more clarity",
+                "deck_id": test_deck.id,
+            },
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        profile.refresh_from_db()
+        assert profile.weights["examples"] == pytest.approx(0.6)
+
 
 
 @pytest.mark.django_db
