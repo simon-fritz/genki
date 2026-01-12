@@ -126,7 +126,7 @@ const DeckDropdownMenu = ({ deck, onDeckUpdated }: DeckDropdownMenuProps) => {
                         <span>Download .apkg</span>
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => navigate("/settings")}>
                         <SlidersHorizontal className="mr-2 h-4 w-4" />
                         <span>Customize learning</span>
                     </DropdownMenuItem>

@@ -6,6 +6,7 @@ import { getCardsByDeck, reviewCard, type Card as CardType } from "@/api/cards";
 import { getDeck, type Deck } from "@/api/decks";
 import { toast } from "sonner";
 import { Loader2, CheckCircle2, ArrowLeft } from "lucide-react";
+import { MarkdownViewer } from "@/components/ui/markdown-viewer";
 
 export default function StudyPage() {
     const { deckId } = useParams<{ deckId: string }>();
@@ -185,16 +186,16 @@ export default function StudyPage() {
                 >
                     {!isFlipped ? (
                         <>
-                            <h2 className="text-3xl font-serif text-gray-800 whitespace-pre-wrap">
-                                {currentCard.front}
-                            </h2>
+                            <div className="text-3xl font-serif text-gray-800 w-full">
+                                <MarkdownViewer content={currentCard.front} />
+                            </div>
                             <p className="text-gray-400 mt-4 text-sm uppercase tracking-widest">
                                 (Click to flip)
                             </p>
                         </>
                     ) : (
-                        <div className="text-2xl text-gray-700 whitespace-pre-wrap">
-                            {currentCard.back}
+                        <div className="text-2xl text-gray-700 w-full">
+                            <MarkdownViewer content={currentCard.back} />
                         </div>
                     )}
                 </Card>

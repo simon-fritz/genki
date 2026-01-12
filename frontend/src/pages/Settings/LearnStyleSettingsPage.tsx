@@ -1,61 +1,238 @@
-import { Textarea } from "@/components/ui/textarea";
-import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Slider } from "@/components/ui/slider";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
+import {
+    getPreferences,
+    updatePreferences,
+    type Preferences,
+    type Weights,
+    type Verbosity,
+    type Structure,
+    type Difficulty,
+    type Language,
+    type AnalogyDomain,
+} from "@/api/preferences";
 
-function SettingSlider({
-    title,
-    desc,
-    labels,
+// include examples left out for now
+// examples per answer left out for now
+// include analogies left out for now
+// analogies missing
+// step by step left out for now
+// include mnecomnic left out for now
+// Select component for dropdowns
+function SelectField({
+    label,
+    description,
     value,
+    options,
     onChange,
 }: {
-    title: string;
-    desc: string;
-    labels: string[];
-    value: number;
-    onChange: (value: number) => void;
+    label: string;
+    description: string;
+    value: string;
+    options: { value: string; label: string }[];
+    onChange: (value: string) => void;
 }) {
     return (
-        <div className="mb-10 max-w-2xl mx-auto">
-            <h3 className="text-sm font-medium mb-1 text-center">{title}</h3>
-            <p className="text-sm text-gray-500 text-center mb-3">{desc}</p>
-            <Slider
-                value={[value]}
-                onValueChange={(val) => onChange(val[0])}
-                max={4}
-                step={1}
-                className="mb-2"
+        <div className="space-y-2">
+            <Label className="text-sm font-medium">{label}</Label>
+            <p className="text-sm text-muted-foreground">{description}</p>
+            <select
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+                {options.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                    </option>
+                ))}
+            </select>
+        </div>
+    );
+}
+
+// Checkbox field component
+function CheckboxField({
+    label,
+    description,
+    checked,
+    onChange,
+}: {
+    label: string;
+    description: string;
+    checked: boolean;
+    onChange: (checked: boolean) => void;
+}) {
+    return (
+        <div className="flex items-start space-x-3">
+            <Checkbox
+                checked={checked}
+                onCheckedChange={onChange}
+                className="mt-1"
             />
-            <div className="flex text-muted-foreground text-xs -mx-[10%]">
-                <span className="w-[20%] text-left pl-[10%] whitespace-nowrap">
-                    {labels[0]}
-                </span>
-                <span className="w-[20%] text-center">{labels[1]}</span>
-                <span className="w-[20%] text-center">{labels[2]}</span>
-                <span className="w-[20%] text-center">{labels[3]}</span>
-                <span className="w-[20%] text-right pr-[10%]">{labels[4]}</span>
+            <div className="space-y-1">
+                <Label className="text-sm font-medium cursor-pointer">
+                    {label}
+                </Label>
+                <p className="text-sm text-muted-foreground">{description}</p>
             </div>
         </div>
     );
 }
 
+// Slider field for weights (0-1)
+function WeightSlider({
+    label,
+    description,
+    value,
+    onChange,
+}: {
+    label: string;
+    description: string;
+    value: number;
+    onChange: (value: number) => void;
+}) {
+    return (
+        <div className="space-y-3">
+            <div className="flex justify-between items-center">
+                <Label className="text-sm font-medium">{label}</Label>
+                <span className="text-sm text-muted-foreground">
+                    {Math.round(value * 100)}%
+                </span>
+            </div>
+            <p className="text-sm text-muted-foreground">{description}</p>
+            <Slider
+                value={[value * 100]}
+                onValueChange={(val) => onChange(val[0] / 100)}
+                max={100}
+                step={5}
+                className="w-full"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Off</span>
+                <span>Low</span>
+                <span>Medium</span>
+                <span>High</span>
+                <span>Max</span>
+            </div>
+        </div>
+    );
+}
+
+const VERBOSITY_OPTIONS: { value: Verbosity; label: string }[] = [
+    { value: "concise", label: "Concise" },
+    { value: "balanced", label: "Balanced" },
+    { value: "detailed", label: "Detailed" },
+];
+
+const STRUCTURE_OPTIONS: { value: Structure; label: string }[] = [
+    { value: "sections", label: "Sections" },
+    { value: "bullets", label: "Bullet Points" },
+    { value: "paragraph", label: "Paragraph" },
+];
+
+const ANALOGY_DOMAIN_OPTIONS:{ value: AnalogyDomain; label: string }[] = [
+    { value: "coding", label: "Coding" },
+    { value: "everyday", label: "Everyday" },
+    { value: "math", label: "Math" },
+];
+
+const DIFFICULTY_OPTIONS: { value: Difficulty; label: string }[] = [
+    { value: "auto", label: "Auto-detect" },
+    { value: "beginner", label: "Beginner" },
+    { value: "intermediate", label: "Intermediate" },
+    { value: "advanced", label: "Advanced" },
+];
+
+const LANGUAGE_OPTIONS: { value: Language; label: string }[] = [
+    { value: "en", label: "English" },
+    { value: "de", label: "German" },
+];
+
 function SettingsPage() {
-    const [textLength, setTextLength] = useState(2);
-    const [equations, setEquations] = useState(2);
-    const [examples, setExamples] = useState(2);
-    const [explanations, setExplanations] = useState(2);
-    const [customInstructions, setCustomInstructions] = useState("");
+    const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [preferences, setPreferences] = useState<Preferences>({
+        verbosity: "balanced",
+        structure: "sections",
+        include_examples: true,
+        examples_per_answer: 1,
+        include_analogies: false,
+        analogy_domain: "coding",
+        step_by_step: true,
+        socratic_mode: false,
+        include_mnemonic: false,
+        quiz_at_end: false,
+        language: "en",
+        difficulty: "auto",
+        auto_tune: true,
+    });
+    const [weights, setWeights] = useState<Weights>({
+        examples: 0.6,
+        analogies: 0.3,
+        step_by_step: 0.55,
+        mnemonic: 0.2,
+        quiz: 0.2,
+        visual: 0.35,
+        concise: 0.4,
+    });
+
+    // Load preferences on mount
+    useEffect(() => {
+        const loadPreferences = async () => {
+            try {
+                const data = await getPreferences();
+                setPreferences(data.preferences);
+                setWeights(data.weights);
+            } catch (error) {
+                console.error("Failed to load preferences:", error);
+                toast.error("Failed to load preferences");
+            } finally {
+                setLoading(false);
+            }
+        };
+        loadPreferences();
+    }, []);
 
     const handleSave = async () => {
         setSaving(true);
-        // TODO implement api calls here
-        setSaving(false);
+        try {
+            await updatePreferences({ preferences, weights });
+            toast.success("Settings saved successfully");
+        } catch (error) {
+            console.error("Failed to save preferences:", error);
+            toast.error("Failed to save settings");
+        } finally {
+            setSaving(false);
+        }
     };
 
+    const updatePref = <K extends keyof Preferences>(
+        key: K,
+        value: Preferences[K]
+    ) => {
+        setPreferences((prev) => ({ ...prev, [key]: value }));
+    };
+
+    const updateWeight = <K extends keyof Weights>(key: K, value: number) => {
+        setWeights((prev) => ({ ...prev, [key]: value }));
+    };
+
+    if (loading) {
+        return (
+            <div className="py-8 flex items-center justify-center">
+                <div className="text-muted-foreground">Loading settings...</div>
+            </div>
+        );
+    }
+
     return (
-        <div className="py-8">
+        <div className="py-8 max-w-2xl mx-auto">
             <div className="mb-8">
                 <h1 className="text-2xl font-bold mb-2">
                     Learning Style Settings
@@ -65,70 +242,137 @@ function SettingsPage() {
                 </p>
             </div>
 
-            <div>
-                <SettingSlider
-                    title="Complexity"
-                    desc="The level of detail used in explanations in the completions"
-                    labels={[
-                        "Primer",
-                        "Shallow",
-                        "Default",
-                        "Detailed",
-                        "In-depth",
-                    ]}
-                    value={textLength}
-                    onChange={setTextLength}
-                />
-                <SettingSlider
-                    title="Tone"
-                    desc="The extent to which specialized terms and academic writing style are used"
-                    labels={[
-                        "Layman's speak",
-                        "Simple",
-                        "Default",
-                        "Formal",
-                        "Full-on jargon",
-                    ]}
-                    value={equations}
-                    onChange={setEquations}
-                />
-                <SettingSlider
-                    title="Examples"
-                    desc="The extent to which examples, analogies, and metaphors are used"
-                    labels={[
-                        "No examples",
-                        "Few",
-                        "Default",
-                        "More",
-                        "Demonstrative",
-                    ]}
-                    value={examples}
-                    onChange={setExamples}
-                />
-                <SettingSlider
-                    title="Length"
-                    desc="The length of generated content (not necessarily its depth)"
-                    labels={["Pithy", "Short", "Default", "Long", "Verbose"]}
-                    value={explanations}
-                    onChange={setExplanations}
-                />
-            </div>
+            {/* Content Style Section */}
+            <section className="space-y-6">
+                <h2 className="text-lg font-semibold">Content Style</h2>
 
-            <div className="mt-8">
-                <h2 className="text-sm font-medium mb-2">
-                    Custom Instructions
-                </h2>
-                <p className="text-sm text-muted-foreground mb-3">
-                    Add any specific preferences or requirements for your
-                    learning content
-                </p>
-                <Textarea
-                    placeholder="E.g., Focus on practical examples, include code snippets, explain difficult concepts with analogies..."
-                    className="min-h-[120px] resize-none"
-                    value={customInstructions}
-                    onChange={(e) => setCustomInstructions(e.target.value)}
+                <SelectField
+                    label="Verbosity"
+                    description="How detailed should the generated content be"
+                    value={preferences.verbosity}
+                    options={VERBOSITY_OPTIONS}
+                    onChange={(v) => updatePref("verbosity", v as Verbosity)}
                 />
-            </div>
+
+                <SelectField
+                    label="Structure"
+                    description="How the content should be organized"
+                    value={preferences.structure}
+                    options={STRUCTURE_OPTIONS}
+                    onChange={(v) => updatePref("structure", v as Structure)}
+                />
+
+                <SelectField
+                    label="AnalogyDomain"
+                    description="What kind of Analogy should be displayed"
+                    value={preferences.analogy_domain}
+                    options={ANALOGY_DOMAIN_OPTIONS}
+                    onChange={(v) => updatePref("analogy_domain", v as AnalogyDomain)}
+                />
+
+                <SelectField
+                    label="Difficulty"
+                    description="The complexity level of generated content"
+                    value={preferences.difficulty}
+                    options={DIFFICULTY_OPTIONS}
+                    onChange={(v) => updatePref("difficulty", v as Difficulty)}
+                />
+
+                <SelectField
+                    label="Language"
+                    description="The language for generated content"
+                    value={preferences.language}
+                    options={LANGUAGE_OPTIONS}
+                    onChange={(v) => updatePref("language", v as Language)}
+                />
+            </section>
+
+            <Separator className="my-8" />
+
+            {/* Learning Features Section - Using Weight Sliders */}
+            <section className="space-y-6">
+                <h2 className="text-lg font-semibold">Learning Features</h2>
+                <p className="text-sm text-muted-foreground">
+                    Adjust how strongly each feature is applied in generated content
+                </p>
+
+                <WeightSlider
+                    label="Examples"
+                    description="Add practical examples to explanations"
+                    value={weights.examples}
+                    onChange={(v) => updateWeight("examples", v)}
+                />
+
+                <WeightSlider
+                    label="Analogies"
+                    description="Use analogies and metaphors to explain concepts"
+                    value={weights.analogies}
+                    onChange={(v) => updateWeight("analogies", v)}
+                />
+
+                <WeightSlider
+                    label="Step-by-Step"
+                    description="Break down complex topics into sequential steps"
+                    value={weights.step_by_step}
+                    onChange={(v) => updateWeight("step_by_step", v)}
+                />
+
+                <WeightSlider
+                    label="Mnemonics"
+                    description="Add memory aids to help retention"
+                    value={weights.mnemonic}
+                    onChange={(v) => updateWeight("mnemonic", v)}
+                />
+
+                <WeightSlider
+                    label="Visual Elements"
+                    description="Include diagrams, charts, or visual descriptions"
+                    value={weights.visual}
+                    onChange={(v) => updateWeight("visual", v)}
+                />
+
+                <WeightSlider
+                    label="Conciseness"
+                    description="Prefer shorter, more direct explanations"
+                    value={weights.concise}
+                    onChange={(v) => updateWeight("concise", v)}
+                />
+            </section>
+
+            <Separator className="my-8" />
+
+            {/* Interactive Features Section */}
+            <section className="space-y-6">
+                <h2 className="text-lg font-semibold">Interactive Features</h2>
+
+                <CheckboxField
+                    label="Quiz at End"
+                    description="Include a brief quiz after explanations"
+                    checked={preferences.quiz_at_end}
+                    onChange={(c) => updatePref("quiz_at_end", c)}
+                />
+
+                <CheckboxField
+                    label="Socratic Mode"
+                    description="Use guiding questions to help you discover answers"
+                    checked={preferences.socratic_mode}
+                    onChange={(c) => updatePref("socratic_mode", c)}
+                />
+            </section>
+
+            <Separator className="my-8" />
+
+            {/* Auto-Tuning Section */}
+            <section className="space-y-6">
+                <h2 className="text-lg font-semibold">Personalization</h2>
+
+                <CheckboxField
+                    label="Auto-Tune Preferences"
+                    description="Allow the system to learn from your reviews and adjust content style automatically"
+                    checked={preferences.auto_tune}
+                    onChange={(c) => updatePref("auto_tune", c)}
+                />
+            </section>
 
             <Button
                 onClick={handleSave}
