@@ -26,8 +26,6 @@ const router = createBrowserRouter([
                 ],
             },
 
-            { path: "/deck/:deckId/study", element: <StudyPage /> },
-            
             {
                 element: <ProtectedRoute />,
                 children: [
@@ -40,6 +38,10 @@ const router = createBrowserRouter([
                     {
                         path: "/deck/:deckId/manage",
                         element: <ManageCardsPage />,
+                    },
+                    {
+                        path: "/deck/:deckId/study",
+                        element: <StudyPage />,
                     },
                 ],
             },
