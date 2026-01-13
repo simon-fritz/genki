@@ -129,7 +129,7 @@ const CardBacksideField = forwardRef<MarkdownEditorRef, CardBacksideFieldProps>(
                                             </p>
                                         );
                                         const subtext = nowRapid
-                                            ? "Cards will be generated without specialized knowledge"
+                                            ? "Cards will be generated without specialized knowledge.\nTags and preferences will be ignored."
                                             : "Uploaded files will be consulted to give better answers";
                                         toast(
                                             <>
