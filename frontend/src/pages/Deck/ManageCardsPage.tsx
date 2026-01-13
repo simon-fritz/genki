@@ -6,18 +6,19 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Loader2, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import EditCardModal from "@/components/card/EditCardModal";
-import api from "@/api/client";
+import CardDeleteDialog from "@/components/manage-cards/CardDeleteDialog";
 
 export default function ManageCardsPage() {
     const { deckId } = useParams<{ deckId: string }>();
     const navigate = useNavigate();
-    
+
     const [deck, setDeck] = useState<Deck | null>(null);
     const [cards, setCards] = useState<Card[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [editingCard, setEditingCard] = useState<Card | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [deletingCard, setDeletingCard] = useState<Card | null>(null);
 
     const fetchData = async () => {
         if (!deckId) {
@@ -29,7 +30,7 @@ export default function ManageCardsPage() {
         try {
             const [deckData, cardsData] = await Promise.all([
                 getDeck(deckId),
-                getCardsByDeck(deckId)
+                getCardsByDeck(deckId),
             ]);
             setDeck(deckData);
             setCards(cardsData);
@@ -51,19 +52,13 @@ export default function ManageCardsPage() {
         setIsEditModalOpen(true);
     };
 
-    const handleDelete = async (cardId: string) => {
-        if (!confirm("Are you sure you want to delete this card?")) {
-            return;
-        }
+    const handleDeleteClick = (card: Card) => {
+        setDeletingCard(card);
+    };
 
-        try {
-            await api.delete(`/cards/${cardId}/`);
-            toast.success("Card deleted successfully");
-            fetchData(); // Refresh the list
-        } catch (err) {
-            console.error("Error deleting card:", err);
-            toast.error("Failed to delete card");
-        }
+    const handleDeleteSuccess = () => {
+        setDeletingCard(null);
+        fetchData();
     };
 
     const handleEditSuccess = () => {
@@ -114,44 +109,52 @@ export default function ManageCardsPage() {
                         Manage Cards: {deck?.name}
                     </h1>
                     <p className="text-gray-600 mt-2">
-                        {cards.length} card{cards.length !== 1 ? 's' : ''} in this deck
+                        {cards.length} card{cards.length !== 1 ? "s" : ""} in
+                        this deck
                     </p>
                 </div>
 
                 {/* Cards Table */}
                 {cards.length === 0 ? (
                     <div className="text-center py-12">
-                        <p className="text-gray-600 mb-4">No cards in this deck yet.</p>
-                        <Button onClick={() => navigate(`/deck/${deckId}/newcard`)}>
+                        <p className="text-gray-600 mb-4">
+                            No cards in this deck yet.
+                        </p>
+                        <Button
+                            onClick={() => navigate(`/deck/${deckId}/newcard`)}
+                        >
                             Add First Card
                         </Button>
                     </div>
                 ) : (
                     <div className="bg-white rounded-lg shadow overflow-hidden">
-                        <table className="min-w-full divide-y divide-gray-200">
+                        <table className="w-full table-fixed divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="w-[42%] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Front
                                     </th>
-                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="w-[42%] px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Back
                                     </th>
-                                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    <th className="w-[16%] px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Actions
                                     </th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {cards.map((card) => (
-                                    <tr key={card.id} className="hover:bg-gray-50">
+                                    <tr
+                                        key={card.id}
+                                        className="hover:bg-gray-50"
+                                    >
                                         <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-900 max-w-xs truncate">
+                                            <div className="text-sm text-gray-900 truncate">
                                                 {card.front}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4">
-                                            <div className="text-sm text-gray-900 max-w-xs truncate">
+                                            <div className="text-sm text-gray-900 truncate">
                                                 {card.back}
                                             </div>
                                         </td>
@@ -167,7 +170,9 @@ export default function ManageCardsPage() {
                                             <Button
                                                 variant="ghost"
                                                 size="sm"
-                                                onClick={() => handleDelete(card.id)}
+                                                onClick={() =>
+                                                    handleDeleteClick(card)
+                                                }
                                                 className="text-red-600 hover:text-red-700"
                                             >
                                                 <Trash2 className="h-4 w-4" />
@@ -189,6 +194,13 @@ export default function ManageCardsPage() {
                         onSuccess={handleEditSuccess}
                     />
                 )}
+
+                {/* Delete Confirmation Dialog */}
+                <CardDeleteDialog
+                    card={deletingCard}
+                    onOpenChange={(open) => !open && setDeletingCard(null)}
+                    onSuccess={handleDeleteSuccess}
+                />
             </div>
         </div>
     );
