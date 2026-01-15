@@ -124,6 +124,63 @@ function WeightSlider({
     );
 }
 
+// Combined toggle + slider for learning features
+function FeatureToggleWithSlider({
+    label,
+    description,
+    enabled,
+    onEnabledChange,
+    weight,
+    onWeightChange,
+}: {
+    label: string;
+    description: string;
+    enabled: boolean;
+    onEnabledChange: (enabled: boolean) => void;
+    weight: number;
+    onWeightChange: (value: number) => void;
+}) {
+    return (
+        <div className="space-y-3 p-4 border rounded-lg">
+            <div className="flex items-start space-x-3">
+                <Checkbox
+                    checked={enabled}
+                    onCheckedChange={onEnabledChange}
+                    className="mt-1"
+                />
+                <div className="flex-1 space-y-1">
+                    <Label className="text-sm font-medium cursor-pointer">
+                        {label}
+                    </Label>
+                    <p className="text-sm text-muted-foreground">{description}</p>
+                </div>
+            </div>
+            {enabled && (
+                <div className="ml-6 pt-3 space-y-2">
+                    <div className="flex justify-between items-center">
+                        <Label className="text-xs text-muted-foreground">Intensity</Label>
+                        <span className="text-sm text-muted-foreground">
+                            {Math.round(weight * 100)}%
+                        </span>
+                    </div>
+                    <Slider
+                        value={[weight * 100]}
+                        onValueChange={(val) => onWeightChange(val[0] / 100)}
+                        max={100}
+                        step={5}
+                        className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>Low</span>
+                        <span>Medium</span>
+                        <span>High</span>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
 const VERBOSITY_OPTIONS: { value: Verbosity; label: string }[] = [
     { value: "concise", label: "Concise" },
     { value: "balanced", label: "Balanced" },
@@ -289,39 +346,56 @@ function SettingsPage() {
 
             <Separator className="my-8" />
 
-            {/* Learning Features Section - Using Weight Sliders */}
+            {/* Learning Features Section - Using Toggle + Weight Sliders */}
             <section className="space-y-6">
                 <h2 className="text-lg font-semibold">Learning Features</h2>
                 <p className="text-sm text-muted-foreground">
-                    Adjust how strongly each feature is applied in generated content
+                    Enable features and adjust how strongly each is applied in generated content
                 </p>
 
-                <WeightSlider
+                <FeatureToggleWithSlider
                     label="Examples"
                     description="Add practical examples to explanations"
-                    value={weights.examples}
-                    onChange={(v) => updateWeight("examples", v)}
+                    enabled={preferences.include_examples}
+                    onEnabledChange={(c) => updatePref("include_examples", c)}
+                    weight={weights.examples}
+                    onWeightChange={(v) => updateWeight("examples", v)}
                 />
 
-                <WeightSlider
+                <FeatureToggleWithSlider
                     label="Analogies"
                     description="Use analogies and metaphors to explain concepts"
-                    value={weights.analogies}
-                    onChange={(v) => updateWeight("analogies", v)}
+                    enabled={preferences.include_analogies}
+                    onEnabledChange={(c) => updatePref("include_analogies", c)}
+                    weight={weights.analogies}
+                    onWeightChange={(v) => updateWeight("analogies", v)}
                 />
 
-                <WeightSlider
+                <FeatureToggleWithSlider
                     label="Step-by-Step"
                     description="Break down complex topics into sequential steps"
-                    value={weights.step_by_step}
-                    onChange={(v) => updateWeight("step_by_step", v)}
+                    enabled={preferences.step_by_step}
+                    onEnabledChange={(c) => updatePref("step_by_step", c)}
+                    weight={weights.step_by_step}
+                    onWeightChange={(v) => updateWeight("step_by_step", v)}
                 />
 
-                <WeightSlider
+                <FeatureToggleWithSlider
                     label="Mnemonics"
                     description="Add memory aids to help retention"
-                    value={weights.mnemonic}
-                    onChange={(v) => updateWeight("mnemonic", v)}
+                    enabled={preferences.include_mnemonic}
+                    onEnabledChange={(c) => updatePref("include_mnemonic", c)}
+                    weight={weights.mnemonic}
+                    onWeightChange={(v) => updateWeight("mnemonic", v)}
+                />
+
+                <FeatureToggleWithSlider
+                    label="Quiz at End"
+                    description="Include a brief quiz after explanations"
+                    enabled={preferences.quiz_at_end}
+                    onEnabledChange={(c) => updatePref("quiz_at_end", c)}
+                    weight={weights.quiz}
+                    onWeightChange={(v) => updateWeight("quiz", v)}
                 />
 
                 <WeightSlider
@@ -344,13 +418,6 @@ function SettingsPage() {
             {/* Interactive Features Section */}
             <section className="space-y-6">
                 <h2 className="text-lg font-semibold">Interactive Features</h2>
-
-                <CheckboxField
-                    label="Quiz at End"
-                    description="Include a brief quiz after explanations"
-                    checked={preferences.quiz_at_end}
-                    onChange={(c) => updatePref("quiz_at_end", c)}
-                />
 
                 <CheckboxField
                     label="Socratic Mode"

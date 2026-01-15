@@ -23,9 +23,12 @@ const DeckButton = ({
     };
 
     return (
-        <Button variant="outline" size={"deckbutton"} ref={ref} {...other} onClick={handleDeckClick}>
+        <Button variant="outline" size={"deckbutton"} ref={ref} {...other}>
             {/* deck name on the left side of deck button */}
-            <div className="flex-1 text-left font-medium text-gray-800 text-base overflow-hidden whitespace-nowrap text-ellipsis pr-4">
+            <div 
+                className="flex-1 text-left font-medium text-gray-800 text-base overflow-hidden whitespace-nowrap text-ellipsis pr-4 cursor-pointer hover:text-blue-600 transition-colors"
+                onClick={handleDeckClick}
+            >
                 {deck.name}
             </div>
 
