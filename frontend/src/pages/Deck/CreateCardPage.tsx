@@ -25,6 +25,13 @@ import type { BacksideResponse } from "@/api/agent";
 import ChangedFrontsideConfirmationDialog from "@/components/create-card/ChangedFrontsideConfirmationDialog";
 import ImprovementsPanel from "@/components/create-card/ImprovementsPanel";
 
+// Normalize markdown to ensure consistent list formatting
+function normalizeMarkdown(text: string): string {
+    // Convert asterisk lists with varying spaces to dash lists
+    // Matches lines starting with * followed by spaces
+    return text.replace(/^(\s*)\*\s+/gm, "$1- ");
+}
+
 const CreateCardPage = () => {
     const navigate = useNavigate();
 
@@ -131,7 +138,7 @@ const CreateCardPage = () => {
                     deck_id: deckId,
                 });
             }
-            setBack(response.back);
+            setBack(normalizeMarkdown(response.back));
         } catch {
             toast.error("Failed to get improved response. Please try again.");
         } finally {
@@ -209,7 +216,7 @@ const CreateCardPage = () => {
                     deck_id: deckId,
                 });
             }
-            setBack(response.back);
+            setBack(normalizeMarkdown(response.back));
             setChangesSinceLastGeneration(false);
             setGeneratedTextInBack(true);
             setResponseMarkedHelpful(false);

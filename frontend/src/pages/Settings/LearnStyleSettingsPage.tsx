@@ -72,7 +72,7 @@ function CheckboxField({
         <div className="flex items-start space-x-3">
             <Checkbox
                 checked={checked}
-                onCheckedChange={onChange}
+                onCheckedChange={(c) => onChange(c === true)}
                 className="mt-1"
             />
             <div className="space-y-1">
@@ -145,7 +145,7 @@ function FeatureToggleWithSlider({
             <div className="flex items-start space-x-3">
                 <Checkbox
                     checked={enabled}
-                    onCheckedChange={onEnabledChange}
+                    onCheckedChange={(checked) => onEnabledChange(checked === true)}
                     className="mt-1"
                 />
                 <div className="flex-1 space-y-1">
@@ -357,7 +357,10 @@ function SettingsPage() {
                     label="Examples"
                     description="Add practical examples to explanations"
                     enabled={preferences.include_examples}
-                    onEnabledChange={(c) => updatePref("include_examples", c)}
+                    onEnabledChange={(c) => {
+                        updatePref("include_examples", c);
+                        if (!c) updateWeight("examples", 0);
+                    }}
                     weight={weights.examples}
                     onWeightChange={(v) => updateWeight("examples", v)}
                 />
@@ -366,7 +369,10 @@ function SettingsPage() {
                     label="Analogies"
                     description="Use analogies and metaphors to explain concepts"
                     enabled={preferences.include_analogies}
-                    onEnabledChange={(c) => updatePref("include_analogies", c)}
+                    onEnabledChange={(c) => {
+                        updatePref("include_analogies", c);
+                        if (!c) updateWeight("analogies", 0);
+                    }}
                     weight={weights.analogies}
                     onWeightChange={(v) => updateWeight("analogies", v)}
                 />
@@ -375,7 +381,10 @@ function SettingsPage() {
                     label="Step-by-Step"
                     description="Break down complex topics into sequential steps"
                     enabled={preferences.step_by_step}
-                    onEnabledChange={(c) => updatePref("step_by_step", c)}
+                    onEnabledChange={(c) => {
+                        updatePref("step_by_step", c);
+                        if (!c) updateWeight("step_by_step", 0);
+                    }}
                     weight={weights.step_by_step}
                     onWeightChange={(v) => updateWeight("step_by_step", v)}
                 />
@@ -384,7 +393,10 @@ function SettingsPage() {
                     label="Mnemonics"
                     description="Add memory aids to help retention"
                     enabled={preferences.include_mnemonic}
-                    onEnabledChange={(c) => updatePref("include_mnemonic", c)}
+                    onEnabledChange={(c) => {
+                        updatePref("include_mnemonic", c);
+                        if (!c) updateWeight("mnemonic", 0);
+                    }}
                     weight={weights.mnemonic}
                     onWeightChange={(v) => updateWeight("mnemonic", v)}
                 />
@@ -393,7 +405,10 @@ function SettingsPage() {
                     label="Quiz at End"
                     description="Include a brief quiz after explanations"
                     enabled={preferences.quiz_at_end}
-                    onEnabledChange={(c) => updatePref("quiz_at_end", c)}
+                    onEnabledChange={(c) => {
+                        updatePref("quiz_at_end", c);
+                        if (!c) updateWeight("quiz", 0);
+                    }}
                     weight={weights.quiz}
                     onWeightChange={(v) => updateWeight("quiz", v)}
                 />

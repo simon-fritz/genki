@@ -55,9 +55,18 @@ export function RagUpload({
             );
             handleClose();
         } catch (error) {
-            if (axios.isAxiosError(error) && error.response?.status === 400) {
-                const { error: errorType, reason } = error.response.data;
-                toast.error(`${errorType}: ${reason}`);
+            console.error("Upload error:", error);
+            if (axios.isAxiosError(error)) {
+                if (error.response?.status === 400) {
+                    const { error: errorType, reason } = error.response.data;
+                    toast.error(`${errorType}: ${reason}`);
+                } else if (error.response) {
+                    toast.error(`Upload failed (${error.response.status}): ${JSON.stringify(error.response.data)}`);
+                } else if (error.request) {
+                    toast.error("Upload failed: No response from server. Check if backend is running.");
+                } else {
+                    toast.error(`Upload failed: ${error.message}`);
+                }
             } else {
                 toast.error("Failed to upload file. Please try again.");
             }

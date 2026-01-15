@@ -8,8 +8,8 @@ langchain-community>=0.3.0
 langchain-text-splitters>=0.3.0
 langchain-google-genai>=3.2.0,<4.0.0
 pypdf>=4.0.0
-supabase>=2.0.0,<2.4.0
-httpx>=0.24,<0.26
+supabase>=2.11.0
+httpx>=0.27.0,<0.29.0
 python-dotenv>=1.0.1
 dotenv>=0.9.9
 langgraph>=0.1.0
@@ -17,7 +17,7 @@ tavily-python>=0.1.0
 django-cors-headers>=3.14.0
 gunicorn>=21.2.0
 whitenoise>=6.7.0
-websockets>=11,<13
+websockets>=13.0
 
 # Additional testing dependencies
 pytest>=7.4.0
