@@ -4,7 +4,6 @@ import os
 from django.conf import settings
 from langchain_core.tools import tool
 from langchain_community.tools.tavily_search import TavilySearchResults
-from langchain_community.vectorstores import SupabaseVectorStore
 
 # Reuse the ingestion utilities from the uploads app
 from uploads.services.document_ingestion import (
@@ -45,28 +44,31 @@ def web_search_tool(query: str) -> str:
 # 2. Scoped RAG Tool
 @tool
 def search_deck_documents(query: str, deck_id: int) -> str:
-    """Search deck-specific ingested documents in Supabase and return concatenated matches.
-
-    If Supabase credentials are missing or invalid, returns an empty string and logs a warning.
-    """
+    """Supabase v2-safe RPC similarity search."""
     try:
         embeddings = _build_embedding_model()
         client = _build_supabase_client()
 
         table_name = getattr(settings, "SUPABASE_VECTOR_TABLE", "documents")
-        query_name = getattr(settings, "SUPABASE_QUERY_NAME", f"{table_name}_match")
+        query_name = getattr(settings, "SUPABASE_QUERY_NAME", "match_documents")
 
-        vector_store = SupabaseVectorStore(
-            client=client,
-            embedding=embeddings,
-            table_name=table_name,
-            query_name=query_name,
-        )
+        query_embedding = embeddings.embed_query(query)
 
-        results = vector_store.similarity_search(
-            query, k=4, filter={"deck_id": int(deck_id)}
-        )
-        return "\n\n".join(doc.page_content for doc in results) if results else ""
+        payload = {
+            "query_embedding": query_embedding,
+            "match_count": 4,
+            "filter": {"deck_id": int(deck_id)},
+        }
+
+        # supabase-py v2 RPC call
+        response = client.rpc(query_name, payload).execute()
+        rows = (response.data or []) if response else []
+
+        # rows contain: id, content, metadata, similarity (per your SQL)
+        contents = [r.get("content", "") for r in rows if r.get("content")]
+
+        return "\n\n".join(contents) if contents else ""
+
     except Exception as exc:
         logger.warning("search_deck_documents failed (%s); continuing without RAG.", exc)
         return ""
