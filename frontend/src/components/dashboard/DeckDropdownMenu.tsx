@@ -5,10 +5,8 @@ import {
     MoreVertical,
     Edit,
     Trash,
-    Copy,
     TableProperties,
     Download,
-    SlidersHorizontal,
     Upload,
 } from "lucide-react";
 import {
@@ -109,11 +107,6 @@ const DeckDropdownMenu = ({ deck, onDeckUpdated }: DeckDropdownMenuProps) => {
                         <span>Delete deck</span>
                     </DropdownMenuItem>
 
-                    <DropdownMenuItem>
-                        <Copy className="mr-2 h-4 w-4" />
-                        <span>Copy deck</span>
-                    </DropdownMenuItem>
-
                     <DropdownMenuItem
                         onSelect={() => navigate(`/deck/${deck.id}/manage`)}
                     >
@@ -124,11 +117,6 @@ const DeckDropdownMenu = ({ deck, onDeckUpdated }: DeckDropdownMenuProps) => {
                     <DropdownMenuItem onSelect={handleExport}>
                         <Download className="mr-2 h-4 w-4" />
                         <span>Download .apkg</span>
-                    </DropdownMenuItem>
-
-                    <DropdownMenuItem onSelect={() => navigate("/settings")}>
-                        <SlidersHorizontal className="mr-2 h-4 w-4" />
-                        <span>Customize learning</span>
                     </DropdownMenuItem>
 
                     <DropdownMenuItem
