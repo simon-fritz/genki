@@ -1,4 +1,5 @@
 import json
+import logging
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, serializers
@@ -31,6 +32,8 @@ class RapidFlashcardRevisionRequestSerializer(serializers.Serializer):
     previous_backside = serializers.CharField()
     feedback = serializers.CharField()
 
+
+logger = logging.getLogger(__name__)
 
 REVISION_WEIGHT_PROMPT = ChatPromptTemplate.from_messages(
     [
@@ -76,6 +79,7 @@ def _suggest_revision_weight_patch(
             "known_features": sorted(KNOWN_FEATURES),
         }
     )
+    logger.info("Weight patch suggestion result: %s", result)
     return result or {}
 
 
@@ -106,7 +110,6 @@ def _update_profile_from_revision(
     if not isinstance(weights_patch, dict):
         return
     apply_weight_patch(profile, weights_patch)
-
 
 
 class FlashcardBacksideView(APIView):
