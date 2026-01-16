@@ -51,9 +51,8 @@ export interface PreferencesUpdatePayload {
  * GET /api/auth/preferences/
  */
 export async function getPreferences(): Promise<UserPreferencesResponse> {
-    const { data } = await api.get<UserPreferencesResponse>(
-        "/auth/preferences/"
-    );
+    const { data } =
+        await api.get<UserPreferencesResponse>("/auth/preferences/");
     return data;
 }
 
@@ -62,11 +61,11 @@ export async function getPreferences(): Promise<UserPreferencesResponse> {
  * PATCH /api/auth/preferences/
  */
 export async function updatePreferences(
-    payload: PreferencesUpdatePayload
+    payload: PreferencesUpdatePayload,
 ): Promise<UserPreferencesResponse> {
     const { data } = await api.patch<UserPreferencesResponse>(
         "/auth/preferences/",
-        payload
+        payload,
     );
     return data;
 }

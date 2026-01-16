@@ -295,6 +295,7 @@ const CreateCardPage = () => {
                 }
                 isGenerating={isGenerating}
                 completionsEnabled={completionsEnabled}
+                rapidModeEnabled={rapidModeEnabled}
             />
             <CardBacksideField
                 ref={backsideEditorRef}
