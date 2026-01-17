@@ -69,8 +69,8 @@ class DeckDocumentUploadApiTests(APITestCase):
         )
 
         with patch(
-            "cards.views.ingest_document",
-            side_effect=DocumentIngestionError("boom"),
+                "cards.views.ingest_document",
+                side_effect=DocumentIngestionError("boom"),
         ):
             response = self.client.post(url, {"file": pdf_file}, format="multipart")
 
@@ -106,7 +106,7 @@ class DocumentIngestionTests(SimpleTestCase):
         mock_reader = MagicMock(pages=[mock_page])
 
         with patch(
-            "uploads.services.document_ingestion.PdfReader", return_value=mock_reader
+                "uploads.services.document_ingestion.PdfReader", return_value=mock_reader
         ):
             with self.assertRaises(DocumentIngestionError):
                 document_ingestion._extract_pdf_text(BytesIO(b"data"))
@@ -144,11 +144,15 @@ class DocumentIngestionTests(SimpleTestCase):
             "upload.pdf", b"%PDF-1.4 test content", content_type="application/pdf"
         )
         chunks = ["first chunk", "second chunk"]
-        embedding_model = object()
-        supabase_client = object()
+        embedding_model = MagicMock()
+        supabase_client = MagicMock()
+        embedding_model.embed_documents.return_value = [[0.1, 0.2], [0.3, 0.4]]
+        supabase_client.table.return_value.insert.return_value.execute.return_value = (
+            MagicMock(data=[])
+        )
 
         with override_settings(
-            GEMINI_API_KEY="key", SUPABASE_URL="url", SUPABASE_KEY="key"
+                GEMINI_API_KEY="key", SUPABASE_URL="url", SUPABASE_KEY="key"
         ):
             with (
                 patch(
@@ -166,19 +170,22 @@ class DocumentIngestionTests(SimpleTestCase):
                 patch(
                     "uploads.services.document_ingestion._build_supabase_client",
                     return_value=supabase_client,
-                ),
-                patch(
-                    "uploads.services.document_ingestion.SupabaseVectorStore.from_documents"
-                ) as mock_from_documents,
+                )
             ):
                 count = ingest_document(deck, uploaded_file)
 
         self.assertEqual(count, len(chunks))
-        mock_from_documents.assert_called_once()
-        called_documents = mock_from_documents.call_args.kwargs["documents"]
-        self.assertEqual(len(called_documents), len(chunks))
-        self.assertEqual(called_documents[0].page_content, "first chunk")
-        self.assertEqual(called_documents[0].metadata["deck_id"], deck.id)
-        self.assertEqual(called_documents[0].metadata["deck_name"], deck.name)
-        self.assertEqual(called_documents[0].metadata["user_id"], deck.user_id)
-        self.assertEqual(called_documents[0].metadata["source"], "upload.pdf")
+        embedding_model.embed_documents.assert_called_once()
+        embed_texts = embedding_model.embed_documents.call_args.args[0]
+        self.assertEqual(embed_texts, chunks)
+        supabase_client.table.assert_called_once_with("documents")
+        supabase_client.table.return_value.insert.assert_called_once()
+        inserted_rows = (
+            supabase_client.table.return_value.insert.call_args.args[0]
+        )
+        self.assertEqual(len(inserted_rows), len(chunks))
+        self.assertEqual(inserted_rows[0]["content"], "first chunk")
+        self.assertEqual(inserted_rows[0]["metadata"]["deck_id"], deck.id)
+        self.assertEqual(inserted_rows[0]["metadata"]["deck_name"], deck.name)
+        self.assertEqual(inserted_rows[0]["metadata"]["user_id"], deck.user_id)
+        self.assertEqual(inserted_rows[0]["metadata"]["source"], "upload.pdf")

@@ -15,30 +15,28 @@ class TestSearchDeckDocuments:
 
     @patch("agent.tools._build_supabase_client")
     @patch("agent.tools._build_embedding_model")
-    @patch("agent.tools.SupabaseVectorStore")
-    def test_returns_empty_string_on_no_results(self, mock_vs, mock_embed, mock_client):
+    def test_returns_empty_string_on_no_results(self, mock_embed, mock_client):
         """Should return empty string when no documents found."""
         mock_client.return_value = MagicMock()
         mock_embed.return_value = MagicMock()
-        mock_vs.return_value.similarity_search.return_value = []
+        mock_embed.return_value.embed_query.return_value = [0.1, 0.2]
+        mock_client.return_value.rpc.return_value.execute.return_value = MagicMock(data=[])
 
         result = search_deck_documents.invoke({"query": "test query", "deck_id": 1})
         assert result == ""
 
     @patch("agent.tools._build_supabase_client")
     @patch("agent.tools._build_embedding_model")
-    @patch("agent.tools.SupabaseVectorStore")
-    def test_returns_concatenated_content(self, mock_vs, mock_embed, mock_client):
+    def test_returns_concatenated_content(self, mock_embed, mock_client):
         """Should return concatenated page content from results."""
         mock_client.return_value = MagicMock()
-        mock_embed.return_value = MagicMock()
-
-        mock_doc1 = MagicMock()
-        mock_doc1.page_content = "First chunk of content"
-        mock_doc2 = MagicMock()
-        mock_doc2.page_content = "Second chunk of content"
-
-        mock_vs.return_value.similarity_search.return_value = [mock_doc1, mock_doc2]
+        mock_embed.return_value.embed_query.return_value = [0.1, 0.2]
+        mock_client.return_value.rpc.return_value.execute.return_value = MagicMock(
+            data=[
+                {"content": "First chunk of content"},
+                {"content": "Second chunk of content"},
+            ]
+        )
 
         result = search_deck_documents.invoke({"query": "test query", "deck_id": 1})
         assert "First chunk of content" in result
@@ -47,32 +45,33 @@ class TestSearchDeckDocuments:
 
     @patch("agent.tools._build_supabase_client")
     @patch("agent.tools._build_embedding_model")
-    @patch("agent.tools.SupabaseVectorStore")
-    def test_filters_by_deck_id(self, mock_vs, mock_embed, mock_client):
+    def test_filters_by_deck_id(self, mock_embed, mock_client):
         """Should filter search by deck_id."""
         mock_client.return_value = MagicMock()
         mock_embed.return_value = MagicMock()
-        mock_vs.return_value.similarity_search.return_value = []
+        mock_embed.return_value.embed_query.return_value = [0.1, 0.2]
+        mock_client.return_value.rpc.return_value.execute.return_value = MagicMock(data=[])
 
         search_deck_documents.invoke({"query": "test", "deck_id": 42})
 
-        mock_vs.return_value.similarity_search.assert_called_once()
-        call_args = mock_vs.return_value.similarity_search.call_args
-        assert call_args.kwargs.get("filter") == {"deck_id": 42}
+        mock_client.return_value.rpc.assert_called_once()
+        call_args = mock_client.return_value.rpc.call_args
+        payload = call_args.args[1]
+        assert payload.get("filter") == {"deck_id": 42}
 
     @patch("agent.tools._build_supabase_client")
     @patch("agent.tools._build_embedding_model")
-    @patch("agent.tools.SupabaseVectorStore")
-    def test_requests_four_results(self, mock_vs, mock_embed, mock_client):
+    def test_requests_four_results(self, mock_embed, mock_client):
         """Should request k=4 results from similarity search."""
         mock_client.return_value = MagicMock()
-        mock_embed.return_value = MagicMock()
-        mock_vs.return_value.similarity_search.return_value = []
+        mock_embed.return_value.embed_query.return_value = [0.1, 0.2]
+        mock_client.return_value.rpc.return_value.execute.return_value = MagicMock(data=[])
 
         search_deck_documents.invoke({"query": "test", "deck_id": 1})
 
-        call_args = mock_vs.return_value.similarity_search.call_args
-        assert call_args.kwargs.get("k") == 4
+        call_args = mock_client.return_value.rpc.call_args
+        payload = call_args.args[1]
+        assert payload.get("match_count") == 4
 
 
 class TestWebSearchTool:

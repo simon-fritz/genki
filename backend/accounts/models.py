@@ -2,8 +2,6 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.conf import settings
 
-
-# Using Django's default User model, no additional models needed
 def default_preferences():
     return {
         "verbosity": "balanced",  # concise | balanced | detailed
