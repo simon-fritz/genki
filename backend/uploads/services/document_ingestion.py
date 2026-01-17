@@ -9,6 +9,7 @@ from typing import Iterable, List, Dict, Any
 from django.conf import settings
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import SupabaseVectorStore
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from pypdf import PdfReader
 from supabase import Client, create_client
