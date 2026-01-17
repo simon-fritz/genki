@@ -41,32 +41,31 @@ def web_search_tool(query: str) -> str:
         logger.warning("Tavily web search failed (%s); continuing without web search.", exc)
         return ""
 
-
-# 2. Scoped RAG Tool
+    
 @tool
 def search_deck_documents(query: str, deck_id: int) -> str:
-    """Search deck-specific ingested documents in Supabase and return concatenated matches.
-
-    If Supabase credentials are missing or invalid, returns an empty string and logs a warning.
-    """
+    """Search deck-specific documents directly via Supabase RPC."""
     try:
         embeddings = _build_embedding_model()
         client = _build_supabase_client()
 
-        table_name = getattr(settings, "SUPABASE_VECTOR_TABLE", "documents")
-        query_name = getattr(settings, "SUPABASE_QUERY_NAME", f"{table_name}_match")
+        query_name = getattr(settings, "SUPABASE_QUERY_NAME", "match_documents")
 
-        vector_store = SupabaseVectorStore(
-            client=client,
-            embedding=embeddings,
-            table_name=table_name,
-            query_name=query_name,
-        )
+        query_vector = embeddings.embed_query(query)
 
-        results = vector_store.similarity_search(
-            query, k=4, filter={"deck_id": int(deck_id)}
-        )
-        return "\n\n".join(doc.page_content for doc in results) if results else ""
+        params = {
+            "query_embedding": query_vector,
+            "match_count": 4,        # Number of chunks to retrieve
+            "filter": {"deck_id": int(deck_id)}
+        }
+        
+        response = client.rpc(query_name, params).execute()
+        
+        if response.data:
+            return "\n\n".join(doc.get('content', '') for doc in response.data)
+        
+        return ""
+
     except Exception as exc:
         logger.warning("search_deck_documents failed (%s); continuing without RAG.", exc)
         return ""
