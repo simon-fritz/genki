@@ -4,7 +4,6 @@ import os
 from django.conf import settings
 from langchain_core.tools import tool
 from langchain_community.tools.tavily_search import TavilySearchResults
-from langchain_community.vectorstores import SupabaseVectorStore
 
 # Reuse the ingestion utilities from the uploads app
 from uploads.services.document_ingestion import (
