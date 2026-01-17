@@ -35,14 +35,16 @@ class ToolsTests(TestCase):
     def test_search_deck_documents_returns_empty_on_no_results(
         self, mock_embed, mock_client
     ):
-        # Mock vector store returning no results
+        # Mock RPC returning no results
         mock_client.return_value = MagicMock()
         mock_embed.return_value = MagicMock()
+        mock_embed.return_value.embed_query.return_value = [0.1, 0.2]
+        mock_client.return_value.rpc.return_value.execute.return_value = MagicMock(
+            data=[]
+        )
 
-        with patch("agent.tools.SupabaseVectorStore") as mock_vs:
-            mock_vs.return_value.similarity_search.return_value = []
-            result = search_deck_documents.invoke({"query": "test", "deck_id": 1})
-            self.assertEqual(result, "")
+        result = search_deck_documents.invoke({"query": "test", "deck_id": 1})
+        self.assertEqual(result, "")
 
 
 class FlashcardBacksideViewTests(APITestCase):
