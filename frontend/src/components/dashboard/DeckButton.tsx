@@ -1,7 +1,7 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import DeckDropdownMenu from "./DeckDropdownMenu";
+import DeckActionsDialog from "./DeckActionsDialog";
 import type { Deck } from "@/api/decks";
-import { useNavigate } from "react-router-dom";
 
 interface DeckButtonProps {
     deck: Deck;
@@ -16,34 +16,44 @@ const DeckButton = ({
     ref,
     ...other
 }: DeckButtonProps & React.ComponentProps<typeof Button>) => {
-    const navigate = useNavigate();
+    const [actionsDialogOpen, setActionsDialogOpen] = useState(false);
 
     const handleDeckClick = () => {
-        navigate(`/deck/${deck.id}/study`);
+        setActionsDialogOpen(true);
     };
 
     return (
-        <Button variant="outline" size={"deckbutton"} ref={ref} {...other}>
-            {/* deck name on the left side of deck button */}
-            <div 
-                className="flex-1 text-left font-medium text-gray-800 text-base overflow-hidden whitespace-nowrap text-ellipsis pr-4 cursor-pointer hover:text-blue-600 transition-colors"
+        <>
+            <Button 
+                variant="outline" 
+                size={"deckbutton"} 
+                ref={ref} 
                 onClick={handleDeckClick}
+                {...other}
             >
-                {deck.name}
-            </div>
+                {/* deck name on the left side of deck button */}
+                <div className="flex-1 text-left font-medium text-gray-800 text-base overflow-hidden whitespace-nowrap text-ellipsis pr-4">
+                    {deck.name}
+                </div>
 
-            {/* card counts and options menu on the right side */}
-            <div className="flex items-center space-x-4 text-sm font-semibold">
-                <span
-                    className={`min-w-6 text-right ${cardsDue > 0 ? "text-blue-600" : "text-gray-600"}`}
-                >
-                    {cardsDue}
-                </span>
+                {/* card counts on the right side */}
+                <div className="flex items-center text-sm font-semibold">
+                    <span
+                        className={`min-w-6 text-right ${cardsDue > 0 ? "text-blue-600" : "text-gray-600"}`}
+                    >
+                        {cardsDue}
+                    </span>
+                </div>
+            </Button>
 
-                {/* options menu icon */}
-                <DeckDropdownMenu deck={deck} onDeckUpdated={onDeckUpdated} />
-            </div>
-        </Button>
+            <DeckActionsDialog
+                deck={deck}
+                cardsDue={cardsDue}
+                open={actionsDialogOpen}
+                onOpenChange={setActionsDialogOpen}
+                onDeckUpdated={onDeckUpdated}
+            />
+        </>
     );
 };
 

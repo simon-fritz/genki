@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { uploadDocument } from "@/api/decks";
+import { markDeckHasDocuments } from "@/lib/deckDocuments";
 import axios from "axios";
 
 interface RagUploadProps {
@@ -53,6 +54,8 @@ export function RagUpload({
             toast.success(
                 `File "${result.filename}" successfully uploaded to deck "${deckName}!"`,
             );
+            // Mark this deck as having documents for accuracy mode
+            markDeckHasDocuments(deckId);
             handleClose();
         } catch (error) {
             console.error("Upload error:", error);
