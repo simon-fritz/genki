@@ -128,7 +128,7 @@ def agent_node(state: AgentState):
         "INFORMATION PRIORITY:\n"
         "1. Try 'search_deck_documents' tool first to find course-specific definitions.\n"
         "2. The user's input may be abbreviated, informal, or use different terminology than the documents.\n"
-        "   - If initial search returns nothing, try rephrasing or expanding the query (e.g., 'backprop' -> 'backpropagation', 'ML' -> 'machine learning').\n"
+        "   - If initial search returns nothing, try rephrasing or expanding the query. \n"
         "3. If tools return no results after trying variations, USE YOUR OWN KNOWLEDGE to answer. You MUST still provide a helpful answer.\n"
         "4. Never fail to produce a FINAL ANSWER. Even for ambiguous or short queries, do your best to provide a useful flashcard back.\n"
         "5. Blend tool results naturally into your answer without citing them explicitly."
