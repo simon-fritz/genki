@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from typing import Literal
 
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -105,7 +106,8 @@ def agent_node(state: AgentState):
         f"Deck: '{state['deck_context']}'.\n\n"
         f"Personalization instructions:\n{state['style_instructions']}\n\n"
         "OUTPUT FORMAT:\n"
-        "- Output ONLY the flashcard answer content. No preamble, no 'Okay, I will...', no chain-of-thought.\n"
+        "- You may 'think' using reasoning text, but when you are ready to answer, you MUST start the final content with 'FINAL ANSWER:'.\n"
+        "- Everything after 'FINAL ANSWER:' will be shown to the user. Everything before it will be hidden.\n"
         "- Keep it concise (ideally under 150 words) unless the user's style asks for detail.\n"
         "- Use bullet points or short paragraphs as appropriate.\n"
         "- Do NOT include phrases like 'Based on the documents...' or 'I will use my internal knowledge...'.\n\n"
@@ -164,10 +166,29 @@ def generator_node(state: AgentState):
     """
     Takes the context gathered and drafts the flashcard answer.
     """
-    # Extract the final answer from the ReAct conversation
     last_message = state["messages"][-1]
-    draft_text = getattr(last_message, "content", "") or ""
-    return {"draft_answer": draft_text}
+    raw_content = getattr(last_message, "content", "") or ""
+    
+    clean_text = raw_content
+
+    # 1. Primary Method: Strict Tag Splitting
+    if "FINAL ANSWER:" in raw_content:
+        clean_text = raw_content.split("FINAL ANSWER:", 1)[1].strip()
+    
+    # 2. Fallback Method: Regex Pattern Matching to remove common conversational starters
+    else:
+        patterns = [
+            r"^(Okay|Sure|certainly|Great|Understood).*?[:\n]",
+            r"^Here is (the|an) .*?[:\n]",
+            r"^Based on (the|my) .*?[:,\n]",
+            r"^I (will|have) .*?[:\n]",
+            r"^The answer is[:\s]",
+        ]
+        
+        for pattern in patterns:
+            clean_text = re.sub(pattern, "", clean_text, flags=re.IGNORECASE | re.MULTILINE).strip()
+
+    return {"draft_answer": clean_text}
 
 
 def critic_node(state: AgentState):
