@@ -83,18 +83,32 @@ def guardrail_node(state: AgentState):
         [
             (
                 "system",
-                "You are a content safety filter. Check if the text is safe. Return JSON: {{'allowed': bool, 'reason': str}}",
+                "You are a content safety filter. Analyze the user text for harmful content "
+                "(hate speech, violence, sexual content, illegal activities, etc.).\n\n"
+                "IMPORTANT: Respond with ONLY a valid JSON object, no other text.\n"
+                "Format: {{\"allowed\": true, \"reason\": \"No safety violations detected.\"}}\n"
+                "Or: {{\"allowed\": false, \"reason\": \"Brief explanation of violation\"}}\n\n"
+                "Do NOT include any explanation, preamble, or markdown. ONLY the JSON object.",
             ),
             ("human", "{text}"),
         ]
     )
-    chain = prompt | llm | JsonOutputParser()
-    result = chain.invoke({"text": state["front"]})
-
-    return {
-        "is_safe": result.get("allowed", False),
-        "safety_reason": result.get("reason", "Unknown"),
-    }
+    
+    try:
+        chain = prompt | llm | JsonOutputParser()
+        result = chain.invoke({"text": state["front"]})
+        return {
+            "is_safe": result.get("allowed", False),
+            "safety_reason": result.get("reason", "Unknown"),
+        }
+    except Exception as e:
+        # If parsing fails, log the error and default to allowing the content
+        # (fail-open for usability, but log for monitoring)
+        logger.warning(f"Guardrail parsing failed, defaulting to allowed: {e}")
+        return {
+            "is_safe": True,
+            "safety_reason": "Guardrail check skipped due to parsing error",
+        }
 
 
 def agent_node(state: AgentState):
@@ -112,9 +126,12 @@ def agent_node(state: AgentState):
         "- Use bullet points or short paragraphs as appropriate.\n"
         "- Do NOT include phrases like 'Based on the documents...' or 'I will use my internal knowledge...'.\n\n"
         "INFORMATION PRIORITY:\n"
-        "1. Use 'search_deck_documents' tool first to find course-specific definitions.\n"
-        "2. Only fall back to your own knowledge if the tool returns nothing.\n"
-        "3. Blend tool results naturally into your answer without citing them explicitly."
+        "1. Try 'search_deck_documents' tool first to find course-specific definitions.\n"
+        "2. The user's input may be abbreviated, informal, or use different terminology than the documents.\n"
+        "   - If initial search returns nothing, try rephrasing or expanding the query (e.g., 'backprop' -> 'backpropagation', 'ML' -> 'machine learning').\n"
+        "3. If tools return no results after trying variations, USE YOUR OWN KNOWLEDGE to answer. You MUST still provide a helpful answer.\n"
+        "4. Never fail to produce a FINAL ANSWER. Even for ambiguous or short queries, do your best to provide a useful flashcard back.\n"
+        "5. Blend tool results naturally into your answer without citing them explicitly."
     )
 
     messages = [SystemMessage(content=system_msg)] + state["messages"]
@@ -187,6 +204,15 @@ def generator_node(state: AgentState):
         
         for pattern in patterns:
             clean_text = re.sub(pattern, "", clean_text, flags=re.IGNORECASE | re.MULTILINE).strip()
+
+    # 3. Final fallback: if clean_text is empty after processing, use the raw content
+    # This handles edge cases where the LLM response doesn't follow the expected format
+    if not clean_text.strip() and raw_content.strip():
+        clean_text = raw_content.strip()
+        logger.warning(
+            "Generator fallback: using raw content as draft_answer (no FINAL ANSWER found). "
+            f"Front: {state.get('front', 'N/A')[:50]}"
+        )
 
     return {"draft_answer": clean_text}
 
