@@ -259,6 +259,79 @@ def formatter_node(state: AgentState):
     }
 
 
+def output_guardrail_node(state: AgentState):
+    """
+    Output validation guardrail. Checks:
+    1. JSON structure validity
+    2. Non-empty meaningful content
+    3. No placeholder/debug text leakage
+    4. Reasonable length bounds
+    5. No PII patterns
+    """
+    issues = []
+    final_json = state.get("final_json", {})
+    
+    # 1. Validate required JSON fields exist
+    required_fields = ["front", "back", "tags", "generation_meta"]
+    missing_fields = [f for f in required_fields if f not in final_json]
+    if missing_fields:
+        issues.append(f"Missing required fields: {missing_fields}")
+    
+    back_content = final_json.get("back", "")
+    
+    # 2. Check for empty or minimal content
+    if not back_content or len(back_content.strip()) < 10:
+        issues.append("Answer content is too short or empty")
+    
+    # 3. Check for placeholder/debug text leakage
+    placeholder_patterns = [
+        "TODO", "FIXME", "XXX",
+        "<placeholder>", "[INSERT", "{{{", "}}}",
+        "FINAL ANSWER:",  # Should have been stripped
+        "Tool not found",
+        "Error:", "Exception:",
+    ]
+    for pattern in placeholder_patterns:
+        if pattern.lower() in back_content.lower():
+            issues.append(f"Detected placeholder/debug text: '{pattern}'")
+            break
+    
+    # 4. Check length bounds (too long may indicate runaway generation)
+    MAX_ANSWER_LENGTH = 5000  # characters
+    if len(back_content) > MAX_ANSWER_LENGTH:
+        issues.append(f"Answer exceeds maximum length ({len(back_content)} > {MAX_ANSWER_LENGTH})")
+    
+    # 5. Basic PII detection (simple patterns)
+    import re
+    pii_patterns = [
+        (r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b', 'email'),
+        (r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b', 'phone number'),
+        (r'\b\d{3}[-]?\d{2}[-]?\d{4}\b', 'SSN-like pattern'),
+        (r'\b\d{16}\b', 'credit card-like number'),
+    ]
+    for pattern, pii_type in pii_patterns:
+        if re.search(pattern, back_content):
+            issues.append(f"Potential PII detected: {pii_type}")
+            break
+    
+    # 6. Validate generation_meta structure
+    gen_meta = final_json.get("generation_meta", {})
+    if not isinstance(gen_meta, dict):
+        issues.append("generation_meta is not a valid dictionary")
+    
+    if issues:
+        logger.warning(f"Output guardrail issues: {issues}")
+        return {
+            "output_passed": False,
+            "output_guardrail_reason": "; ".join(issues),
+        }
+    
+    return {
+        "output_passed": True,
+        "output_guardrail_reason": "All output validation checks passed",
+    }
+
+
 # --- Conditional Edges ---
 
 
@@ -286,6 +359,11 @@ def route_critic(state: AgentState) -> Literal["agent", "formatter"]:
     return "formatter"
 
 
+def route_output_guardrail(state: AgentState) -> Literal["end_success", "end_failed"]:
+    """Route based on output guardrail validation results."""
+    return "end_success" if state.get("output_passed", False) else "end_failed"
+
+
 # --- Build the Graph ---
 
 workflow = StateGraph(AgentState)
@@ -297,6 +375,7 @@ workflow.add_node("tools", tool_node)
 workflow.add_node("generator", generator_node)
 workflow.add_node("critic", critic_node)
 workflow.add_node("formatter", formatter_node)
+workflow.add_node("output_guardrail", output_guardrail_node)
 
 # Flow
 workflow.set_entry_point("context_builder")
@@ -314,7 +393,10 @@ workflow.add_edge("generator", "critic")
 workflow.add_conditional_edges(
     "critic", route_critic, {"agent": "agent", "formatter": "formatter"}
 )
-workflow.add_edge("formatter", END)
+workflow.add_edge("formatter", "output_guardrail")
+workflow.add_conditional_edges(
+    "output_guardrail", route_output_guardrail, {"end_success": END, "end_failed": END}
+)
 
 # Compile
 app = workflow.compile()
