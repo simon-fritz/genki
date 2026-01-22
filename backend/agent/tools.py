@@ -44,7 +44,18 @@ def web_search_tool(query: str) -> str:
     
 @tool
 def search_deck_documents(query: str, deck_id: int) -> str:
-    """Search deck-specific documents directly via Supabase RPC."""
+    """Search deck-specific documents for relevant content.
+    
+    Args:
+        query: The search query. Can be a term, question, or phrase to search for.
+               For best results with abbreviations, also try the full term 
+               (e.g., 'backpropagation' instead of just 'backprop').
+        deck_id: The deck ID to scope the search.
+    
+    Returns:
+        Relevant document content if found, or a message indicating no results.
+        An empty result means you should use your own knowledge to answer.
+    """
     try:
         embeddings = _build_embedding_model()
         client = _build_supabase_client()
@@ -62,10 +73,13 @@ def search_deck_documents(query: str, deck_id: int) -> str:
         response = client.rpc(query_name, params).execute()
         
         if response.data:
-            return "\n\n".join(doc.get('content', '') for doc in response.data)
+            content = "\n\n".join(doc.get('content', '') for doc in response.data if doc.get('content'))
+            if content.strip():
+                return content
         
-        return ""
+        # Explicit message for empty results so the agent knows to use its own knowledge
+        return "[No matching documents found]"
 
     except Exception as exc:
         logger.warning("search_deck_documents failed (%s); continuing without RAG.", exc)
-        return ""
+        return "[Document search unavailable]"
