@@ -108,20 +108,26 @@ function FeatureToggleWithSlider({
             <div className="flex items-start space-x-3">
                 <Checkbox
                     checked={enabled}
-                    onCheckedChange={(checked) => onEnabledChange(checked === true)}
+                    onCheckedChange={(checked) =>
+                        onEnabledChange(checked === true)
+                    }
                     className="mt-1"
                 />
                 <div className="flex-1 space-y-1">
                     <Label className="text-sm font-medium cursor-pointer">
                         {label}
                     </Label>
-                    <p className="text-sm text-muted-foreground">{description}</p>
+                    <p className="text-sm text-muted-foreground">
+                        {description}
+                    </p>
                 </div>
             </div>
             {enabled && (
                 <div className="ml-6 pt-3 space-y-2">
                     <div className="flex justify-between items-center">
-                        <Label className="text-xs text-muted-foreground">Intensity</Label>
+                        <Label className="text-xs text-muted-foreground">
+                            Intensity
+                        </Label>
                         <span className="text-sm text-muted-foreground">
                             {Math.round(weight * 100)}%
                         </span>
@@ -144,32 +150,84 @@ function FeatureToggleWithSlider({
     );
 }
 
-const VERBOSITY_OPTIONS: { value: Verbosity; label: string; description: string }[] = [
-    { value: "concise", label: "Concise", description: "Brief and to the point" },
+const VERBOSITY_OPTIONS: {
+    value: Verbosity;
+    label: string;
+    description: string;
+}[] = [
+    {
+        value: "concise",
+        label: "Concise",
+        description: "Brief and to the point",
+    },
     { value: "balanced", label: "Balanced", description: "Good mix of detail" },
-    { value: "detailed", label: "Detailed", description: "Thorough explanations" },
+    {
+        value: "detailed",
+        label: "Detailed",
+        description: "Thorough explanations",
+    },
 ];
 
-const STRUCTURE_OPTIONS: { value: Structure; label: string; description: string }[] = [
-    { value: "sections", label: "Sections", description: "Organized with headers" },
-    { value: "bullets", label: "Bullet Points", description: "Quick scannable lists" },
-    { value: "paragraph", label: "Paragraph", description: "Flowing prose style" },
+const STRUCTURE_OPTIONS: {
+    value: Structure;
+    label: string;
+    description: string;
+}[] = [
+    {
+        value: "sections",
+        label: "Sections",
+        description: "Organized with headers",
+    },
+    {
+        value: "bullets",
+        label: "Bullet Points",
+        description: "Quick scannable lists",
+    },
+    {
+        value: "paragraph",
+        label: "Paragraph",
+        description: "Flowing prose style",
+    },
 ];
 
-const ANALOGY_DOMAIN_OPTIONS: { value: AnalogyDomain; label: string; description: string }[] = [
+const ANALOGY_DOMAIN_OPTIONS: {
+    value: AnalogyDomain;
+    label: string;
+    description: string;
+}[] = [
     { value: "coding", label: "Coding", description: "Programming examples" },
-    { value: "everyday", label: "Everyday", description: "Real-life situations" },
+    {
+        value: "everyday",
+        label: "Everyday",
+        description: "Real-life situations",
+    },
     { value: "math", label: "Math", description: "Mathematical concepts" },
 ];
 
-const DIFFICULTY_OPTIONS: { value: Difficulty; label: string; description: string }[] = [
+const DIFFICULTY_OPTIONS: {
+    value: Difficulty;
+    label: string;
+    description: string;
+}[] = [
     { value: "auto", label: "Auto-detect", description: "Adapts to content" },
-    { value: "beginner", label: "Beginner", description: "Simple explanations" },
-    { value: "intermediate", label: "Intermediate", description: "Some prior knowledge" },
+    {
+        value: "beginner",
+        label: "Beginner",
+        description: "Simple explanations",
+    },
+    {
+        value: "intermediate",
+        label: "Intermediate",
+        description: "Some prior knowledge",
+    },
     { value: "advanced", label: "Advanced", description: "Expert level depth" },
 ];
 
-const LANGUAGE_OPTIONS: { value: Language; label: string; description: string }[] = [
+const LANGUAGE_OPTIONS: {
+    value: Language;
+    label: string;
+    description: string;
+}[] = [
     { value: "en", label: "English", description: "Content in English" },
     { value: "de", label: "German", description: "Inhalt auf Deutsch" },
 ];
@@ -178,6 +236,7 @@ function SettingsPage() {
     const location = useLocation();
     const navigate = useNavigate();
     const fromDeckSetup = location.state?.fromDeckSetup === true;
+    const fromCreateCardPage = location.state?.fromCreateCardPage === true;
     const deckId = location.state?.deckId;
     const deckName = location.state?.deckName;
     const uploadedFiles = location.state?.uploadedFiles;
@@ -237,6 +296,8 @@ function SettingsPage() {
                     state: { fromSettingsPage: true, deckName, uploadedFiles },
                     replace: true,
                 });
+            } else if (fromCreateCardPage) {
+                navigate(-1);
             }
         } catch (error) {
             console.error("Failed to save preferences:", error);
@@ -248,7 +309,7 @@ function SettingsPage() {
 
     const updatePref = <K extends keyof Preferences>(
         key: K,
-        value: Preferences[K]
+        value: Preferences[K],
     ) => {
         setPreferences((prev) => ({ ...prev, [key]: value }));
     };
@@ -298,7 +359,9 @@ function SettingsPage() {
                     label="Analogy Domain"
                     value={preferences.analogy_domain}
                     options={ANALOGY_DOMAIN_OPTIONS}
-                    onChange={(v) => updatePref("analogy_domain", v as AnalogyDomain)}
+                    onChange={(v) =>
+                        updatePref("analogy_domain", v as AnalogyDomain)
+                    }
                 />
 
                 <ContentDetailSelector
@@ -322,7 +385,8 @@ function SettingsPage() {
             <section className="space-y-6">
                 <h2 className="text-lg font-semibold">Learning Features</h2>
                 <p className="text-sm text-muted-foreground">
-                    Enable features and adjust how strongly each is applied in generated content
+                    Enable features and adjust how strongly each is applied in
+                    generated content
                 </p>
 
                 <FeatureToggleWithSlider
@@ -434,7 +498,13 @@ function SettingsPage() {
                 className="mt-8 w-full"
                 size="lg"
             >
-                {saving ? "Saving..." : "Save Settings"}
+                {saving
+                    ? "Saving..."
+                    : fromDeckSetup
+                      ? "Save settings and return to deck setup"
+                      : fromCreateCardPage
+                        ? "Save settings and return to creating card"
+                        : "Save settings"}
             </Button>
         </div>
     );

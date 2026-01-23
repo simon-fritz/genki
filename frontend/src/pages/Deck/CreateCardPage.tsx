@@ -59,7 +59,7 @@ const CreateCardPage = () => {
     const [completionsEnabled, setCompletionsEnabled] = useState(true);
     // Default to rapid mode, only use accuracy mode if documents are uploaded
     const [generationMode, setGenerationMode] = useState<"rapid" | "accuracy">(
-        hasDocuments ? "accuracy" : "rapid"
+        hasDocuments ? "accuracy" : "rapid",
     );
     const rapidModeEnabled = generationMode === "rapid";
     const backsideEditorRef = useRef<MarkdownEditorRef>(null);
@@ -76,10 +76,38 @@ const CreateCardPage = () => {
 
     // Block navigation when there's unsaved content
     const hasUnsavedContent = !!(front.trim() || back.trim());
-    const blocker = useBlocker(hasUnsavedContent);
+    const blocker = useBlocker(({ nextLocation }) => {
+        // Allow navigation to settings, but save draft first
+        if (nextLocation.pathname === "/settings") {
+            localStorage.setItem(
+                "draft-card",
+                JSON.stringify({ front, back, deckId }),
+            );
+            return false;
+        }
+        return hasUnsavedContent;
+    });
 
     // Detect Mac for keyboard shortcut display
     const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+
+    // Restore draft from localStorage if returning from settings
+    useEffect(() => {
+        const draft = localStorage.getItem("draft-card");
+        if (draft) {
+            const {
+                front: savedFront,
+                back: savedBack,
+                deckId: savedDeckId,
+            } = JSON.parse(draft);
+            // Only restore if we're on the same deck
+            if (savedDeckId === deckId) {
+                setFront(savedFront || "");
+                setBack(savedBack || "");
+            }
+            localStorage.removeItem("draft-card");
+        }
+    }, [deckId]);
 
     // always hide improvements panel when the other feedback buttons are hidden
     useEffect(() => {
@@ -315,12 +343,10 @@ const CreateCardPage = () => {
         <div>
             {/* Mode Selector - At the top */}
             {completionsEnabled && (
-                <div className="mb-6">
-                    <h3 className="text-sm font-medium mb-2">Generation Mode</h3>
+                <div className="mb-6 mt-6">
                     <ModeSelectorWithDescription
                         mode={generationMode}
                         onModeChange={setGenerationMode}
-                        accuracyModeAvailable={hasDocuments}
                     />
                 </div>
             )}
@@ -341,18 +367,6 @@ const CreateCardPage = () => {
                 completionsEnabled={completionsEnabled}
                 rapidModeEnabled={rapidModeEnabled}
             />
-
-            {/* Settings button - Above Back of the card */}
-            <div className="flex justify-start mt-4 mb-2">
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.open("/settings", "_blank")}
-                >
-                    <Settings className="h-4 w-4 mr-1" />
-                    Settings
-                </Button>
-            </div>
 
             <CardBacksideField
                 ref={backsideEditorRef}
