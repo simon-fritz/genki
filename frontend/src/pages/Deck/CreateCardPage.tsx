@@ -26,6 +26,7 @@ import type { BacksideResponse } from "@/api/agent";
 import ChangedFrontsideConfirmationDialog from "@/components/create-card/ChangedFrontsideConfirmationDialog";
 import ImprovementsPanel from "@/components/create-card/ImprovementsPanel";
 import { deckHasDocuments } from "@/lib/deckDocuments";
+import { isAxiosError } from "axios";
 
 // Normalize markdown to ensure consistent list formatting
 function normalizeMarkdown(text: string): string {
@@ -148,8 +149,20 @@ const CreateCardPage = () => {
                 });
             }
             setBack(normalizeMarkdown(response.back));
-        } catch {
-            toast.error("Failed to get improved response. Please try again.");
+        } catch (err) {
+            if (
+                isAxiosError(err) &&
+                err.response?.status === 400 &&
+                err.response?.data?.error === "Content Blocked"
+            ) {
+                toast.error(
+                    "Could not generate card due to safety and accuracy guidelines",
+                );
+            } else {
+                toast.error(
+                    "Failed to get improved response. Please try again.",
+                );
+            }
         } finally {
             setIsSubmittingImprovement(false);
         }
@@ -229,8 +242,18 @@ const CreateCardPage = () => {
             setChangesSinceLastGeneration(false);
             setGeneratedTextInBack(true);
             setResponseMarkedHelpful(false);
-        } catch {
-            toast.error("Failed to generate backside. Please try again.");
+        } catch (err) {
+            if (
+                isAxiosError(err) &&
+                err.response?.status === 400 &&
+                err.response?.data?.error === "Content Blocked"
+            ) {
+                toast.error(
+                    "Could not generate card due to safety and accuracy guidelines",
+                );
+            } else {
+                toast.error("Failed to generate backside. Please try again.");
+            }
         } finally {
             setIsGenerating(false);
         }
