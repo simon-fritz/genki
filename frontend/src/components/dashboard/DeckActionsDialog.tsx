@@ -7,7 +7,21 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { BookOpen, Plus, TableProperties, Trash, Edit, Download, Upload } from "lucide-react";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+    BookOpen,
+    Plus,
+    TableProperties,
+    Trash,
+    Edit,
+    Download,
+    Upload,
+} from "lucide-react";
 import type { Deck } from "@/api/decks";
 import DeckDeleteDialog from "./DeckDeleteDialog";
 import DeckEditDialog from "./DeckEditDialog";
@@ -109,15 +123,6 @@ const DeckActionsDialog = ({
 
                     <div className="grid grid-cols-3 gap-3 mt-4">
                         <Button
-                            variant="default"
-                            className="flex flex-col items-center justify-center h-20 gap-1.5"
-                            onClick={handleStudy}
-                        >
-                            <BookOpen className="h-5 w-5" />
-                            <span className="text-xs">Study</span>
-                        </Button>
-
-                        <Button
                             variant="outline"
                             className="flex flex-col items-center justify-center h-20 gap-1.5"
                             onClick={handleAddCards}
@@ -132,7 +137,7 @@ const DeckActionsDialog = ({
                             onClick={handleManageCards}
                         >
                             <TableProperties className="h-5 w-5" />
-                            <span className="text-xs">Manage</span>
+                            <span className="text-xs">Manage cards</span>
                         </Button>
 
                         <Button
@@ -141,7 +146,7 @@ const DeckActionsDialog = ({
                             onClick={handleEdit}
                         >
                             <Edit className="h-5 w-5" />
-                            <span className="text-xs">Edit Deck</span>
+                            <span className="text-xs">Rename deck</span>
                         </Button>
 
                         <Button
@@ -150,7 +155,7 @@ const DeckActionsDialog = ({
                             onClick={handleExport}
                         >
                             <Download className="h-5 w-5" />
-                            <span className="text-xs">Export</span>
+                            <span className="text-xs">Export to Anki</span>
                         </Button>
 
                         <Button
@@ -159,17 +164,47 @@ const DeckActionsDialog = ({
                             onClick={handleUpload}
                         >
                             <Upload className="h-5 w-5" />
-                            <span className="text-xs">Upload PDF</span>
+                            <span className="text-xs">Upload materials</span>
                         </Button>
 
                         <Button
                             variant="outline"
-                            className="flex flex-col items-center justify-center h-20 gap-1.5 col-span-3 text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="flex flex-col items-center justify-center h-20 gap-1.5 text-red-600 hover:text-red-700 hover:bg-red-50"
                             onClick={handleDelete}
                         >
                             <Trash className="h-5 w-5" />
-                            <span className="text-xs">Delete Deck</span>
+                            <span className="text-xs">Delete deck</span>
                         </Button>
+
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <span className="col-span-3">
+                                        <Button
+                                            variant={
+                                                cardsDue
+                                                    ? "default"
+                                                    : "disabled"
+                                            }
+                                            className="flex gap-3 items-center justify-center h-15 w-full"
+                                            onClick={handleStudy}
+                                            disabled={!cardsDue}
+                                        >
+                                            <BookOpen className="h-5 w-5" />
+                                            <span>Study this deck</span>
+                                        </Button>
+                                    </span>
+                                </TooltipTrigger>
+                                {!cardsDue && (
+                                    <TooltipContent side="bottom">
+                                        <p>
+                                            No cards due for review! Add more
+                                            cards or come back tomorrow.
+                                        </p>
+                                    </TooltipContent>
+                                )}
+                            </Tooltip>
+                        </TooltipProvider>
                     </div>
                 </DialogContent>
             </Dialog>
