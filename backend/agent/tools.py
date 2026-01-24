@@ -30,7 +30,7 @@ def web_search_tool(query: str) -> str:
             tavily_api_key = "test-key"
         else:
             logger.warning("TAVILY_API_KEY not set; web search disabled.")
-            return ""
+            return "[Web search unavailable]"
 
     try:
         tavily = TavilySearchResults(max_results=3, tavily_api_key=tavily_api_key)
@@ -38,7 +38,7 @@ def web_search_tool(query: str) -> str:
         return str(result) if result is not None else ""
     except Exception as exc:
         logger.warning("Tavily web search failed (%s); continuing without web search.", exc)
-        return ""  
+        return "[Web search unavailable]"  
 
 @tool
 def search_deck_documents(query: str, deck_id: int) -> str:
