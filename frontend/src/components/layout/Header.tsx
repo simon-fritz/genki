@@ -1,5 +1,5 @@
 import { SlidersHorizontal, User, LogOut } from "lucide-react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { getAccessToken, clearTokens } from "@/api/client";
 import {
     DropdownMenu,
@@ -14,6 +14,10 @@ import logoIcon from "@/assets/logo_icon.png";
 
 const Header = () => {
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // Check if we're on the create card page (matches /deck/:id/newcard)
+    const isCreateCardPage = /^\/deck\/[^/]+\/newcard$/.test(location.pathname);
 
     const username = (() => {
         try {
@@ -28,7 +32,7 @@ const Header = () => {
     })();
 
     return (
-        <div className="border-b border-gray-200 bg-white py-4 flex w-full items-center px-6">
+        <div className="border-b border-gray-200 bg-white py-0 flex w-full items-center px-6 pt-3 pb-2">
             <div
                 className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
                 onClick={() => {
@@ -47,7 +51,11 @@ const Header = () => {
                 <div className="my-1 ml-auto flex">
                     <SlidersHorizontal
                         onClick={() => {
-                            navigate("/settings");
+                            navigate("/settings", {
+                                state: isCreateCardPage
+                                    ? { fromCreateCardPage: true }
+                                    : undefined,
+                            });
                         }}
                         className="mx-1 h-7 w-7 cursor-pointer"
                     />

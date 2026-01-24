@@ -5,8 +5,7 @@ import {
     MessageSquare,
     Bot,
     BotOff,
-    Lightbulb,
-    ChevronsRight,
+    Info,
 } from "lucide-react";
 import {
     MarkdownEditor,
@@ -16,7 +15,6 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { SubtleButton } from "@/components/create-card/SubtleButton";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
-import { Info } from "lucide-react";
 
 interface CardBacksideFieldProps {
     value: string;
@@ -25,8 +23,6 @@ interface CardBacksideFieldProps {
     isGenerating?: boolean;
     completionsEnabled: boolean;
     onCompletionsToggle: () => void;
-    rapidModeEnabled: boolean;
-    onRapidModeToggle: () => void;
     changesSinceLastGeneration?: boolean;
     responseMarkedHelpful: boolean;
     onResponseMarkedHelpfulToggle: () => void;
@@ -43,8 +39,6 @@ const CardBacksideField = forwardRef<MarkdownEditorRef, CardBacksideFieldProps>(
             isGenerating = false,
             completionsEnabled,
             onCompletionsToggle,
-            rapidModeEnabled,
-            onRapidModeToggle,
             changesSinceLastGeneration,
             responseMarkedHelpful,
             onResponseMarkedHelpfulToggle,
@@ -105,47 +99,6 @@ const CardBacksideField = forwardRef<MarkdownEditorRef, CardBacksideFieldProps>(
                                     onCompletionsToggle();
                                 }}
                             />
-                            {completionsEnabled && (
-                                <SubtleButton
-                                    icon={
-                                        rapidModeEnabled
-                                            ? ChevronsRight
-                                            : Lightbulb
-                                    }
-                                    text={
-                                        rapidModeEnabled
-                                            ? "Rapid mode"
-                                            : "Accuracy mode"
-                                    }
-                                    onClick={() => {
-                                        const nowRapid = !rapidModeEnabled;
-                                        const toptext = nowRapid ? (
-                                            <p>
-                                                Now using <b>rapid mode</b>.
-                                            </p>
-                                        ) : (
-                                            <p>
-                                                Now using <b>accuracy mode</b>.
-                                            </p>
-                                        );
-                                        const subtext = nowRapid
-                                            ? "Cards will be generated without specialized knowledge.\nTags and preferences will be ignored."
-                                            : "Uploaded files will be consulted to give better answers";
-                                        toast(
-                                            <>
-                                                <div className="flex items-center gap-2">
-                                                    <Info className="w-3 h-8" />
-                                                    {toptext}
-                                                </div>
-                                                <p className="text-xs text-gray-500">
-                                                    {subtext}
-                                                </p>
-                                            </>,
-                                        );
-                                        onRapidModeToggle();
-                                    }}
-                                />
-                            )}
                         </div>
                         {!changesSinceLastGeneration && completionsEnabled && (
                             <div className="flex gap-1 items-start">

@@ -161,19 +161,23 @@
 .markdown-viewer ul, .markdown-viewer ol {
   margin: 0.5em 0;
   padding-left: 1.5em;
+  text-align: left;
 }
 
 .markdown-viewer ul {
   list-style-type: disc;
+  list-style-position: outside;
 }
 
 .markdown-viewer ol {
   list-style-type: decimal;
+  list-style-position: outside;
 }
 
 .markdown-viewer li {
-  margin: 0.25em 0;
+  margin: 0.35em 0;
   line-height: 1.6;
+  padding-left: 0.25em;
 }
 
 .markdown-viewer hr {

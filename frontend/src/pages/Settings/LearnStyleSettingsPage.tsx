@@ -3,7 +3,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Slider } from "@/components/ui/slider";
+import ContentDetailSelector from "@/components/settings/ContentDetailSelector";
 import { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import {
     getPreferences,
@@ -16,45 +18,6 @@ import {
     type Language,
     type AnalogyDomain,
 } from "@/api/preferences";
-
-// include examples left out for now
-// examples per answer left out for now
-// include analogies left out for now
-// analogies missing
-// step by step left out for now
-// include mnecomnic left out for now
-// Select component for dropdowns
-function SelectField({
-    label,
-    description,
-    value,
-    options,
-    onChange,
-}: {
-    label: string;
-    description: string;
-    value: string;
-    options: { value: string; label: string }[];
-    onChange: (value: string) => void;
-}) {
-    return (
-        <div className="space-y-2">
-            <Label className="text-sm font-medium">{label}</Label>
-            <p className="text-sm text-muted-foreground">{description}</p>
-            <select
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            >
-                {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                    </option>
-                ))}
-            </select>
-        </div>
-    );
-}
 
 // Checkbox field component
 function CheckboxField({
@@ -145,20 +108,26 @@ function FeatureToggleWithSlider({
             <div className="flex items-start space-x-3">
                 <Checkbox
                     checked={enabled}
-                    onCheckedChange={(checked) => onEnabledChange(checked === true)}
+                    onCheckedChange={(checked) =>
+                        onEnabledChange(checked === true)
+                    }
                     className="mt-1"
                 />
                 <div className="flex-1 space-y-1">
                     <Label className="text-sm font-medium cursor-pointer">
                         {label}
                     </Label>
-                    <p className="text-sm text-muted-foreground">{description}</p>
+                    <p className="text-sm text-muted-foreground">
+                        {description}
+                    </p>
                 </div>
             </div>
             {enabled && (
                 <div className="ml-6 pt-3 space-y-2">
                     <div className="flex justify-between items-center">
-                        <Label className="text-xs text-muted-foreground">Intensity</Label>
+                        <Label className="text-xs text-muted-foreground">
+                            Intensity
+                        </Label>
                         <span className="text-sm text-muted-foreground">
                             {Math.round(weight * 100)}%
                         </span>
@@ -181,37 +150,97 @@ function FeatureToggleWithSlider({
     );
 }
 
-const VERBOSITY_OPTIONS: { value: Verbosity; label: string }[] = [
-    { value: "concise", label: "Concise" },
-    { value: "balanced", label: "Balanced" },
-    { value: "detailed", label: "Detailed" },
+const VERBOSITY_OPTIONS: {
+    value: Verbosity;
+    label: string;
+    description: string;
+}[] = [
+    {
+        value: "concise",
+        label: "Concise",
+        description: "Brief and to the point",
+    },
+    { value: "balanced", label: "Balanced", description: "Good mix of detail" },
+    {
+        value: "detailed",
+        label: "Detailed",
+        description: "Thorough explanations",
+    },
 ];
 
-const STRUCTURE_OPTIONS: { value: Structure; label: string }[] = [
-    { value: "sections", label: "Sections" },
-    { value: "bullets", label: "Bullet Points" },
-    { value: "paragraph", label: "Paragraph" },
+const STRUCTURE_OPTIONS: {
+    value: Structure;
+    label: string;
+    description: string;
+}[] = [
+    {
+        value: "sections",
+        label: "Sections",
+        description: "Organized with headers",
+    },
+    {
+        value: "bullets",
+        label: "Bullet Points",
+        description: "Quick scannable lists",
+    },
+    {
+        value: "paragraph",
+        label: "Paragraph",
+        description: "Flowing prose style",
+    },
 ];
 
-const ANALOGY_DOMAIN_OPTIONS:{ value: AnalogyDomain; label: string }[] = [
-    { value: "coding", label: "Coding" },
-    { value: "everyday", label: "Everyday" },
-    { value: "math", label: "Math" },
+const ANALOGY_DOMAIN_OPTIONS: {
+    value: AnalogyDomain;
+    label: string;
+    description: string;
+}[] = [
+    { value: "coding", label: "Coding", description: "Programming examples" },
+    {
+        value: "everyday",
+        label: "Everyday",
+        description: "Real-life situations",
+    },
+    { value: "math", label: "Math", description: "Mathematical concepts" },
 ];
 
-const DIFFICULTY_OPTIONS: { value: Difficulty; label: string }[] = [
-    { value: "auto", label: "Auto-detect" },
-    { value: "beginner", label: "Beginner" },
-    { value: "intermediate", label: "Intermediate" },
-    { value: "advanced", label: "Advanced" },
+const DIFFICULTY_OPTIONS: {
+    value: Difficulty;
+    label: string;
+    description: string;
+}[] = [
+    { value: "auto", label: "Auto-detect", description: "Adapts to content" },
+    {
+        value: "beginner",
+        label: "Beginner",
+        description: "Simple explanations",
+    },
+    {
+        value: "intermediate",
+        label: "Intermediate",
+        description: "Some prior knowledge",
+    },
+    { value: "advanced", label: "Advanced", description: "Expert level depth" },
 ];
 
-const LANGUAGE_OPTIONS: { value: Language; label: string }[] = [
-    { value: "en", label: "English" },
-    { value: "de", label: "German" },
+const LANGUAGE_OPTIONS: {
+    value: Language;
+    label: string;
+    description: string;
+}[] = [
+    { value: "en", label: "English", description: "Content in English" },
+    { value: "de", label: "German", description: "Inhalt auf Deutsch" },
 ];
 
 function SettingsPage() {
+    const location = useLocation();
+    const navigate = useNavigate();
+    const fromDeckSetup = location.state?.fromDeckSetup === true;
+    const fromCreateCardPage = location.state?.fromCreateCardPage === true;
+    const deckId = location.state?.deckId;
+    const deckName = location.state?.deckName;
+    const uploadedFiles = location.state?.uploadedFiles;
+
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [preferences, setPreferences] = useState<Preferences>({
@@ -261,6 +290,15 @@ function SettingsPage() {
         try {
             await updatePreferences({ preferences, weights });
             toast.success("Settings saved successfully");
+            // If opened from deck setup, navigate back to deck setup page
+            if (fromDeckSetup && deckId) {
+                navigate(`/deck/${deckId}/setup`, {
+                    state: { fromSettingsPage: true, deckName, uploadedFiles },
+                    replace: true,
+                });
+            } else if (fromCreateCardPage) {
+                navigate(-1);
+            }
         } catch (error) {
             console.error("Failed to save preferences:", error);
             toast.error("Failed to save settings");
@@ -271,7 +309,7 @@ function SettingsPage() {
 
     const updatePref = <K extends keyof Preferences>(
         key: K,
-        value: Preferences[K]
+        value: Preferences[K],
     ) => {
         setPreferences((prev) => ({ ...prev, [key]: value }));
     };
@@ -303,41 +341,38 @@ function SettingsPage() {
             <section className="space-y-6">
                 <h2 className="text-lg font-semibold">Content Style</h2>
 
-                <SelectField
-                    label="Verbosity"
-                    description="How detailed should the generated content be"
+                <ContentDetailSelector
+                    label="Content Detail Level"
                     value={preferences.verbosity}
                     options={VERBOSITY_OPTIONS}
                     onChange={(v) => updatePref("verbosity", v as Verbosity)}
                 />
 
-                <SelectField
+                <ContentDetailSelector
                     label="Structure"
-                    description="How the content should be organized"
                     value={preferences.structure}
                     options={STRUCTURE_OPTIONS}
                     onChange={(v) => updatePref("structure", v as Structure)}
                 />
 
-                <SelectField
-                    label="AnalogyDomain"
-                    description="What kind of Analogy should be displayed"
+                <ContentDetailSelector
+                    label="Analogy Domain"
                     value={preferences.analogy_domain}
                     options={ANALOGY_DOMAIN_OPTIONS}
-                    onChange={(v) => updatePref("analogy_domain", v as AnalogyDomain)}
+                    onChange={(v) =>
+                        updatePref("analogy_domain", v as AnalogyDomain)
+                    }
                 />
 
-                <SelectField
+                <ContentDetailSelector
                     label="Difficulty"
-                    description="The complexity level of generated content"
                     value={preferences.difficulty}
                     options={DIFFICULTY_OPTIONS}
                     onChange={(v) => updatePref("difficulty", v as Difficulty)}
                 />
 
-                <SelectField
+                <ContentDetailSelector
                     label="Language"
-                    description="The language for generated content"
                     value={preferences.language}
                     options={LANGUAGE_OPTIONS}
                     onChange={(v) => updatePref("language", v as Language)}
@@ -350,7 +385,8 @@ function SettingsPage() {
             <section className="space-y-6">
                 <h2 className="text-lg font-semibold">Learning Features</h2>
                 <p className="text-sm text-muted-foreground">
-                    Enable features and adjust how strongly each is applied in generated content
+                    Enable features and adjust how strongly each is applied in
+                    generated content
                 </p>
 
                 <FeatureToggleWithSlider
@@ -462,7 +498,13 @@ function SettingsPage() {
                 className="mt-8 w-full"
                 size="lg"
             >
-                {saving ? "Saving..." : "Save Settings"}
+                {saving
+                    ? "Saving..."
+                    : fromDeckSetup
+                      ? "Save settings and return to deck setup"
+                      : fromCreateCardPage
+                        ? "Save settings and return to creating card"
+                        : "Save settings"}
             </Button>
         </div>
     );

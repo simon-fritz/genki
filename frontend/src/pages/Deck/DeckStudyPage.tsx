@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { getCardsByDeck, reviewCard, type Card as CardType } from "@/api/cards";
 import { getDeck, type Deck } from "@/api/decks";
 import { toast } from "sonner";
-import { Loader2, CheckCircle2, ArrowLeft } from "lucide-react";
+import { Loader2, CheckCircle2, ArrowLeft, Settings } from "lucide-react";
 import { MarkdownViewer } from "@/components/ui/markdown-viewer";
 
 export default function StudyPage() {
@@ -166,11 +166,20 @@ export default function StudyPage() {
     const currentCard = cards[currentIndex];
 
     return (
-        <div className="min-h-screen bg-slate-50 p-8 flex flex-col items-center">
-            <div className="max-w-xl w-full space-y-8">
+        <div className="min-h-screen bg-white py-8 flex flex-col items-center">
+            <div className="w-full space-y-8">
                 
                 {/* Header Info */}
-                <div className="text-center space-y-2">
+                <div className="text-center space-y-2 relative">
+                    <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className="absolute right-0 top-0"
+                        onClick={() => navigate("/settings/learning-style")}
+                        title="Settings"
+                    >
+                        <Settings className="h-5 w-5" />
+                    </Button>
                     <h1 className="text-2xl font-bold text-gray-900">
                         {deck?.name || "Studying"}
                     </h1>
@@ -181,20 +190,20 @@ export default function StudyPage() {
 
                 {/* The Flashcard Area */}
                 <Card 
-                    className="min-h-[400px] flex flex-col items-center justify-center p-10 text-center shadow-lg hover:shadow-xl transition-shadow cursor-pointer bg-white"
+                    className="min-h-[400px] flex flex-col shadow-lg hover:shadow-xl transition-shadow cursor-pointer bg-white overflow-auto"
                     onClick={handleFlip}
                 >
                     {!isFlipped ? (
-                        <>
-                            <div className="text-3xl font-serif text-gray-800 w-full">
+                        <div className="flex-1 flex flex-col items-center justify-center p-10">
+                            <div className="text-2xl font-serif text-gray-800 w-full text-center">
                                 <MarkdownViewer content={currentCard.front} />
                             </div>
                             <p className="text-gray-400 mt-4 text-sm uppercase tracking-widest">
                                 (Click to flip)
                             </p>
-                        </>
+                        </div>
                     ) : (
-                        <div className="text-2xl text-gray-700 w-full">
+                        <div className="flex-1 p-8 text-base text-gray-700 w-full text-left overflow-auto">
                             <MarkdownViewer content={currentCard.back} />
                         </div>
                     )}

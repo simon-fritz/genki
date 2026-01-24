@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import { CornerDownLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -7,6 +8,7 @@ import TagButton from "@/components/create-card/TagButton";
 import { getPreferences, updatePreferences } from "@/api/preferences.ts";
 import type { Preferences } from "@/api/preferences.ts";
 import { toast } from "sonner";
+import SettingsTagButton from "@/components/create-card/SettingsTagButton";
 
 interface CardFrontsideFieldProps {
     value: string;
@@ -70,6 +72,7 @@ const CardFrontsideField = ({
 }: CardFrontsideFieldProps) => {
     const inputRef = useRef<HTMLInputElement>(null);
     const wasFocusedRef = useRef(false);
+    const navigate = useNavigate();
 
     const [tagsLoading, setTagsLoading] = useState<boolean>(true);
     const [tags, setTags] = useState<Tags>({
@@ -147,7 +150,7 @@ const CardFrontsideField = ({
     };
 
     return (
-        <FieldGroup className="my-6">
+        <FieldGroup className="mt-4 mb-8">
             <Field>
                 <FieldLabel>Front of the card</FieldLabel>
                 <Input
@@ -179,6 +182,13 @@ const CardFrontsideField = ({
                                 onClick={() => handleToggleTag(name)}
                             />
                         ))}
+                        <SettingsTagButton
+                            onClick={() =>
+                                navigate("/settings", {
+                                    state: { fromCreateCardPage: true },
+                                })
+                            }
+                        />
                     </div>
                     <div className="flex gap-1">
                         <SubtleButton

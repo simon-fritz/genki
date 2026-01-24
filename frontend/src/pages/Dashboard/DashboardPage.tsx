@@ -116,10 +116,8 @@ const DashboardPage = () => {
                         {/* header row with labels */}
                         <div className="hidden md:flex justify-between items-center text-sm font-medium text-gray-500 mb-2 border-b pb-1 my-2">
                             <span className="flex-1">Deck Name</span>
-                            <div className="flex items-center space-x-4 ml-4">
+                            <div className="flex items-center ml-4">
                                 <span className="min-w-6 text-right">Due</span>
-                                <span className="w-9 ml-2"></span>
-                                {/* Placeholder for the dropdown menu icon */}
                             </div>
                         </div>
 

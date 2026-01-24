@@ -4,9 +4,10 @@ import {
     useParams,
     useBlocker,
 } from "react-router-dom";
-import { Info, Plus } from "lucide-react";
+import { Info, Plus, Settings } from "lucide-react";
 import CardFrontsideField from "@/components/create-card/CardFrontsideField";
 import CardBacksideField from "@/components/create-card/CardBacksideField";
+import { ModeSelectorWithDescription } from "@/components/create-card/ModeSelector";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import ExitConfirmationDialog from "@/components/create-card/ExitConfirmationDialog";
@@ -24,6 +25,8 @@ import { toast } from "sonner";
 import type { BacksideResponse } from "@/api/agent";
 import ChangedFrontsideConfirmationDialog from "@/components/create-card/ChangedFrontsideConfirmationDialog";
 import ImprovementsPanel from "@/components/create-card/ImprovementsPanel";
+import { deckHasDocuments } from "@/lib/deckDocuments";
+import { isAxiosError } from "axios";
 
 // Normalize markdown to ensure consistent list formatting
 function normalizeMarkdown(text: string): string {
@@ -44,6 +47,9 @@ const CreateCardPage = () => {
         location.state?.deckName || null,
     );
 
+    // Check if this deck has documents uploaded (for accuracy mode)
+    const hasDocuments = deckId ? deckHasDocuments(deckId) : false;
+
     // Card content state
     const [front, setFront] = useState("");
     const [back, setBack] = useState("");
@@ -51,7 +57,11 @@ const CreateCardPage = () => {
     const [isSaving, setIsSaving] = useState(false);
     const [showExitDialog, setShowExitDialog] = useState(false);
     const [completionsEnabled, setCompletionsEnabled] = useState(true);
-    const [rapidModeEnabled, setRapidModeEnabled] = useState(false);
+    // Default to rapid mode, only use accuracy mode if documents are uploaded
+    const [generationMode, setGenerationMode] = useState<"rapid" | "accuracy">(
+        hasDocuments ? "accuracy" : "rapid",
+    );
+    const rapidModeEnabled = generationMode === "rapid";
     const backsideEditorRef = useRef<MarkdownEditorRef>(null);
     const [changesSinceLastGeneration, setChangesSinceLastGeneration] =
         useState(true);
@@ -66,10 +76,38 @@ const CreateCardPage = () => {
 
     // Block navigation when there's unsaved content
     const hasUnsavedContent = !!(front.trim() || back.trim());
-    const blocker = useBlocker(hasUnsavedContent);
+    const blocker = useBlocker(({ nextLocation }) => {
+        // Allow navigation to settings, but save draft first
+        if (nextLocation.pathname === "/settings") {
+            localStorage.setItem(
+                "draft-card",
+                JSON.stringify({ front, back, deckId }),
+            );
+            return false;
+        }
+        return hasUnsavedContent;
+    });
 
     // Detect Mac for keyboard shortcut display
     const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+
+    // Restore draft from localStorage if returning from settings
+    useEffect(() => {
+        const draft = localStorage.getItem("draft-card");
+        if (draft) {
+            const {
+                front: savedFront,
+                back: savedBack,
+                deckId: savedDeckId,
+            } = JSON.parse(draft);
+            // Only restore if we're on the same deck
+            if (savedDeckId === deckId) {
+                setFront(savedFront || "");
+                setBack(savedBack || "");
+            }
+            localStorage.removeItem("draft-card");
+        }
+    }, [deckId]);
 
     // always hide improvements panel when the other feedback buttons are hidden
     useEffect(() => {
@@ -139,8 +177,20 @@ const CreateCardPage = () => {
                 });
             }
             setBack(normalizeMarkdown(response.back));
-        } catch {
-            toast.error("Failed to get improved response. Please try again.");
+        } catch (err) {
+            if (
+                isAxiosError(err) &&
+                err.response?.status === 400 &&
+                err.response?.data?.error === "Content Blocked"
+            ) {
+                toast.error(
+                    "Could not generate card due to safety and accuracy guidelines",
+                );
+            } else {
+                toast.error(
+                    "Failed to get improved response. Please try again.",
+                );
+            }
         } finally {
             setIsSubmittingImprovement(false);
         }
@@ -220,8 +270,18 @@ const CreateCardPage = () => {
             setChangesSinceLastGeneration(false);
             setGeneratedTextInBack(true);
             setResponseMarkedHelpful(false);
-        } catch {
-            toast.error("Failed to generate backside. Please try again.");
+        } catch (err) {
+            if (
+                isAxiosError(err) &&
+                err.response?.status === 400 &&
+                err.response?.data?.error === "Content Blocked"
+            ) {
+                toast.error(
+                    "Could not generate card due to safety and accuracy guidelines",
+                );
+            } else {
+                toast.error("Failed to generate backside. Please try again.");
+            }
         } finally {
             setIsGenerating(false);
         }
@@ -281,6 +341,16 @@ const CreateCardPage = () => {
 
     return (
         <div>
+            {/* Mode Selector - At the top */}
+            {completionsEnabled && (
+                <div className="mb-6 mt-6">
+                    <ModeSelectorWithDescription
+                        mode={generationMode}
+                        onModeChange={setGenerationMode}
+                    />
+                </div>
+            )}
+
             <CardFrontsideField
                 value={front}
                 onChange={(val) => {
@@ -297,6 +367,7 @@ const CreateCardPage = () => {
                 completionsEnabled={completionsEnabled}
                 rapidModeEnabled={rapidModeEnabled}
             />
+
             <CardBacksideField
                 ref={backsideEditorRef}
                 value={back}
@@ -312,10 +383,6 @@ const CreateCardPage = () => {
                 onCompletionsToggle={() =>
                     setCompletionsEnabled((prev) => !prev)
                 }
-                rapidModeEnabled={rapidModeEnabled}
-                onRapidModeToggle={() => {
-                    setRapidModeEnabled((prev) => !prev);
-                }}
                 changesSinceLastGeneration={changesSinceLastGeneration}
                 responseMarkedHelpful={responseMarkedHelpful}
                 onResponseMarkedHelpfulToggle={() => {

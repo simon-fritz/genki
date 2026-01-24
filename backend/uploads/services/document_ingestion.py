@@ -2,13 +2,13 @@
 
 from __future__ import annotations
 
+import uuid
 import logging
-from typing import List
+from typing import Iterable, List, Dict, Any
 
 from django.conf import settings
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import SupabaseVectorStore
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from pypdf import PdfReader
 from supabase import Client, create_client
@@ -19,6 +19,10 @@ logger = logging.getLogger(__name__)
 class DocumentIngestionError(Exception):
     """Raised when a document cannot be ingested into the vector store."""
 
+def _batched(items: List[Any], batch_size: int) -> Iterable[List[Any]]:
+    """Helper"""
+    for i in range(0, len(items), batch_size):
+        yield items[i : i + batch_size]
 
 def _build_supabase_client() -> Client:
     url = getattr(settings, "SUPABASE_URL", "")
@@ -70,34 +74,32 @@ def _split_text(text: str) -> List[str]:
 
 def ingest_document(deck, uploaded_file) -> int:
     """
-    Ingest a PDF document into the Supabase vector store for the given deck.
-
-    Args:
-        deck: Deck model instance that owns the uploaded document.
-        uploaded_file: Uploaded PDF file object.
+    Ingest a PDF document into Supabase (pgvector)
 
     Returns:
-        Number of chunks inserted into Supabase.
+        Number of chunks inserted.
     """
 
+    # 1) Extract + split
     text = _extract_pdf_text(uploaded_file)
     chunks = _split_text(text)
     if not chunks:
         raise DocumentIngestionError("No content chunks were produced from the upload.")
 
+    # 2) Build clients/models
     embedding_model = _build_embedding_model()
     supabase_client = _build_supabase_client()
 
     table_name = getattr(settings, "SUPABASE_VECTOR_TABLE", "documents")
-    query_name = getattr(settings, "SUPABASE_QUERY_NAME", f"{table_name}_match")
 
+    # 3) Prepare Documents
     documents = [
         Document(
             page_content=chunk,
             metadata={
-                "deck_id": deck.id,
+                "deck_id": int(deck.id),
                 "deck_name": deck.name,
-                "user_id": deck.user_id,
+                "user_id": int(deck.user_id),
                 "source": getattr(uploaded_file, "name", ""),
             },
         )
@@ -111,12 +113,33 @@ def ingest_document(deck, uploaded_file) -> int:
         deck.id,
     )
 
-    SupabaseVectorStore.from_documents(
-        documents=documents,
-        embedding=embedding_model,
-        client=supabase_client,
-        table_name=table_name,
-        query_name=query_name,
-    )
+    # 4) Embed
+    texts = [doc.page_content for doc in documents]
+    vectors = embedding_model.embed_documents(texts)
 
-    return len(documents)
+    if len(vectors) != len(documents):
+        raise DocumentIngestionError(
+            f"Embedding count mismatch: got {len(vectors)} vectors for {len(documents)} chunks."
+        )
+
+    # 5) Build rows for Supabase insert
+    rows = []
+    for doc, vec in zip(documents, vectors):
+        rows.append(
+            {
+                "id": str(uuid.uuid4()),
+                "content": doc.page_content,
+                "metadata": doc.metadata,
+                "embedding": vec,  # list[float] length must match vector dims (3072)
+            }
+        )
+
+    # 6) Insert in batches (payload safety)
+    inserted = 0
+    for batch in _batched(rows, batch_size=200):
+        resp = supabase_client.table(table_name).insert(batch).execute()
+        # supabase-py returns resp.data when available; we count by batch size regardless
+        inserted += len(batch)
+
+    return inserted
+

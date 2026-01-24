@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Upload, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { uploadDocument } from "@/api/decks";
+import { markDeckHasDocuments } from "@/lib/deckDocuments";
 import axios from "axios";
 
 interface RagUploadProps {
@@ -53,6 +54,8 @@ export function RagUpload({
             toast.success(
                 `File "${result.filename}" successfully uploaded to deck "${deckName}!"`,
             );
+            // Mark this deck as having documents for accuracy mode
+            markDeckHasDocuments(deckId);
             handleClose();
         } catch (error) {
             console.error("Upload error:", error);
@@ -61,9 +64,13 @@ export function RagUpload({
                     const { error: errorType, reason } = error.response.data;
                     toast.error(`${errorType}: ${reason}`);
                 } else if (error.response) {
-                    toast.error(`Upload failed (${error.response.status}): ${JSON.stringify(error.response.data)}`);
+                    toast.error(
+                        `Upload failed (${error.response.status}): ${JSON.stringify(error.response.data)}`,
+                    );
                 } else if (error.request) {
-                    toast.error("Upload failed: No response from server. Check if backend is running.");
+                    toast.error(
+                        "Upload failed: No response from server. Check if backend is running.",
+                    );
                 } else {
                     toast.error(`Upload failed: ${error.message}`);
                 }
@@ -104,7 +111,7 @@ export function RagUpload({
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="py-4">
+                <div className="py-4 min-w-0 overflow-hidden">
                     <input
                         ref={fileInputRef}
                         type="file"
@@ -123,9 +130,9 @@ export function RagUpload({
                             Choose PDF File
                         </Button>
                     ) : (
-                        <div className="flex items-center gap-3 p-4 border rounded-md bg-gray-50">
-                            <FileText className="h-8 w-8 text-blue-600" />
-                            <div className="flex-1 overflow-hidden">
+                        <div className="flex items-center gap-3 p-4 border rounded-md bg-gray-50 min-w-0">
+                            <FileText className="h-8 w-8 text-blue-600 flex-shrink-0" />
+                            <div className="flex-1 min-w-0 overflow-hidden">
                                 <p className="font-medium text-gray-800 truncate">
                                     {selectedFile.name}
                                 </p>
@@ -136,6 +143,7 @@ export function RagUpload({
                             <Button
                                 variant="ghost"
                                 size="sm"
+                                className="flex-shrink-0"
                                 onClick={() => {
                                     setSelectedFile(null);
                                     if (fileInputRef.current) {

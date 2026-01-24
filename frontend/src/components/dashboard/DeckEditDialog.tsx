@@ -51,26 +51,24 @@ const DeckEditDialog = ({
         try {
             if (mode === "create") {
                 const createdDeck = await createDeck({ name, description });
-                toast.success(`Successfully created the deck "${name}"!`, {
-                    action: {
-                        label: "Add Cards",
-                        onClick: () =>
-                            navigate(`/deck/${createdDeck.id}/newcard`, {
-                                state: {
-                                    deckId: createdDeck.id,
-                                    deckName: createdDeck.name,
-                                },
-                            }),
-                    },
-                });
+                toast.success(`Successfully created the deck "${name}"!`);
                 setName("");
                 setDescription("");
+                setOpen(false);
+                onSuccess?.();
+                // Navigate to setup page for new decks
+                navigate(`/deck/${createdDeck.id}/setup`, {
+                    state: {
+                        deckId: createdDeck.id,
+                        deckName: createdDeck.name,
+                    },
+                });
             } else {
                 await updateDeck({ name, description }, deck!.id);
                 toast.success(`Successfully updated the deck "${name}"!`);
+                setOpen(false);
+                onSuccess?.();
             }
-            setOpen(false);
-            onSuccess?.();
         } catch (error) {
             if (axios.isAxiosError(error) && error.response?.status === 409) {
                 toast.error("A deck with that name already exists.");

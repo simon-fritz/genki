@@ -72,43 +72,48 @@ In the Supabase dashboard:
 2. Create the extension, table, and function (adjusting vector length to 3072 for Gemini):
 
 ```sql
--- Enable pgvector extension
 create extension if not exists vector;
 
--- Create a table to store your documents
-create table if not exists documents (
-  id uuid primary key default gen_random_uuid(),
-  content text,          -- corresponds to Document.page_content
-  metadata jsonb,        -- corresponds to Document.metadata
-  embedding vector(3072) -- 3072 dims for gemini-embedding-001
+-- 1) Table (matches your original shape: UUID provided by the app)
+create table if not exists public.documents (
+  id uuid primary key,
+  content text,
+  metadata jsonb,
+  embedding vector(3072)
 );
 
--- Optional: enable RLS (for production you should add proper policies)
--- alter table documents enable row level security;
+-- 2) Remove any old overloads to avoid PostgREST ambiguity
+--    (If your database stored the arg type without dimensions, use "vector" instead of "vector(3072)".)
+drop function if exists public.match_documents(vector(3072), jsonb);
+drop function if exists public.match_documents(vector(3072), integer, jsonb);
 
--- Create a function to search for documents
-create or replace function match_documents (
+-- 3) Create ONE canonical function
+create or replace function public.match_documents (
   query_embedding vector(3072),
-  filter jsonb default '{}'
+  match_count int default 4,
+  filter jsonb default '{}'::jsonb
 ) returns table (
   id uuid,
   content text,
   metadata jsonb,
   similarity float
 ) language plpgsql as $$
-#variable_conflict use_column
 begin
   return query
   select
-    id,
-    content,
-    metadata,
-    1 - (documents.embedding <=> query_embedding) as similarity
-  from documents
-  where metadata @> filter
-  order by documents.embedding <=> query_embedding;
+    d.id,
+    d.content,
+    d.metadata,
+    1 - (d.embedding <=> query_embedding) as similarity
+  from public.documents d
+  where d.metadata @> filter
+  order by d.embedding <=> query_embedding
+  limit match_count;
 end;
 $$;
+
+-- 4) Reload PostgREST schema cache (so rpc() sees the current signature)
+notify pgrst, 'reload schema';
 ```
 
 ### 5. Test the integration (optional)
