@@ -30,7 +30,7 @@ def web_search_tool(query: str) -> str:
             tavily_api_key = "test-key"
         else:
             logger.warning("TAVILY_API_KEY not set; web search disabled.")
-            return ""
+            return "[Web search unavailable]"
 
     try:
         tavily = TavilySearchResults(max_results=3, tavily_api_key=tavily_api_key)
@@ -38,18 +38,25 @@ def web_search_tool(query: str) -> str:
         return str(result) if result is not None else ""
     except Exception as exc:
         logger.warning("Tavily web search failed (%s); continuing without web search.", exc)
-        return ""
+        return "[Web search unavailable]"  
 
-
-# 2. Scoped RAG Tool
 @tool
 def search_deck_documents(query: str, deck_id: int) -> str:
-    """Supabase v2-safe RPC similarity search."""
+    """Search deck-specific documents for relevant content.
+    
+    Args:
+        query: The search query. Can be a term, question, or phrase to search for.
+               For best results with abbreviations, also try the full term 
+               (e.g., 'backpropagation' instead of just 'backprop').
+        deck_id: The deck ID to scope the search.
+    
+    Returns:
+        Relevant document content if found, or a message indicating no results.
+    """
     try:
         embeddings = _build_embedding_model()
         client = _build_supabase_client()
 
-        table_name = getattr(settings, "SUPABASE_VECTOR_TABLE", "documents")
         query_name = getattr(settings, "SUPABASE_QUERY_NAME", "match_documents")
 
         query_embedding = embeddings.embed_query(query)
@@ -62,13 +69,14 @@ def search_deck_documents(query: str, deck_id: int) -> str:
 
         # supabase-py v2 RPC call
         response = client.rpc(query_name, payload).execute()
-        rows = (response.data or []) if response else []
-
-        # rows contain: id, content, metadata, similarity (per your SQL)
-        contents = [r.get("content", "") for r in rows if r.get("content")]
-
-        return "\n\n".join(contents) if contents else ""
+        if response.data:
+            content = "\n\n".join(doc.get('content', '') for doc in response.data if doc.get('content'))
+            if content.strip():
+                return content
+        
+        # Explicit message for empty results so the agent knows to use its own knowledge
+        return "[No matching documents found]"
 
     except Exception as exc:
         logger.warning("search_deck_documents failed (%s); continuing without RAG.", exc)
-        return ""
+        return "[Document search unavailable]"

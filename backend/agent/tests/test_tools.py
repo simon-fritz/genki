@@ -23,7 +23,7 @@ class TestSearchDeckDocuments:
         mock_client.return_value.rpc.return_value.execute.return_value = MagicMock(data=[])
 
         result = search_deck_documents.invoke({"query": "test query", "deck_id": 1})
-        assert result == ""
+        assert result == "[No matching documents found]"
 
     @patch("agent.tools._build_supabase_client")
     @patch("agent.tools._build_embedding_model")

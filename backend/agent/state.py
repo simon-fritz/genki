@@ -27,5 +27,10 @@ class AgentState(TypedDict):
     critique_count: int  # To prevent infinite reflection loops
 
     generation_meta: Dict[str, Any]
+    
+    # Output Guardrail
+    output_passed: bool
+    output_guardrail_reason: str
+    
     # Final Output
     final_json: Dict[str, Any]

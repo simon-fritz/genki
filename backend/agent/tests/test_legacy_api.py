@@ -44,7 +44,7 @@ class ToolsTests(TestCase):
         )
 
         result = search_deck_documents.invoke({"query": "test", "deck_id": 1})
-        self.assertEqual(result, "")
+        self.assertEqual(result, "[No matching documents found]")
 
 
 class FlashcardBacksideViewTests(APITestCase):
