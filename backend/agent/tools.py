@@ -38,9 +38,8 @@ def web_search_tool(query: str) -> str:
         return str(result) if result is not None else ""
     except Exception as exc:
         logger.warning("Tavily web search failed (%s); continuing without web search.", exc)
-        return ""
+        return ""  
 
-    
 @tool
 def search_deck_documents(query: str, deck_id: int) -> str:
     """Search deck-specific documents for relevant content.
@@ -53,7 +52,6 @@ def search_deck_documents(query: str, deck_id: int) -> str:
     
     Returns:
         Relevant document content if found, or a message indicating no results.
-        An empty result means you should use your own knowledge to answer.
     """
     try:
         embeddings = _build_embedding_model()
@@ -61,16 +59,16 @@ def search_deck_documents(query: str, deck_id: int) -> str:
 
         query_name = getattr(settings, "SUPABASE_QUERY_NAME", "match_documents")
 
-        query_vector = embeddings.embed_query(query)
+        query_embedding = embeddings.embed_query(query)
 
-        params = {
-            "query_embedding": query_vector,
-            "match_count": 4,        # Number of chunks to retrieve
-            "filter": {"deck_id": int(deck_id)}
+        payload = {
+            "query_embedding": query_embedding,
+            "match_count": 4,
+            "filter": {"deck_id": int(deck_id)},
         }
-        
-        response = client.rpc(query_name, params).execute()
-        
+
+        # supabase-py v2 RPC call
+        response = client.rpc(query_name, payload).execute()
         if response.data:
             content = "\n\n".join(doc.get('content', '') for doc in response.data if doc.get('content'))
             if content.strip():
