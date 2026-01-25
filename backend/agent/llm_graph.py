@@ -158,7 +158,7 @@ def tool_node(state: AgentState):
             tool_args["deck_id"] = int(state["deck_id"])
             res = search_deck_documents.invoke(tool_args)
             # Mark RAG usage if we got content
-            if res:
+            if res and "[No matching documents found]" not in str(res) and "[Document search unavailable]" not in str(res):
                 rag_was_used = True
         elif tool_name == "web_search_tool":
             query = tool_args.get("query", "") if isinstance(tool_args, dict) else str(tool_args)
