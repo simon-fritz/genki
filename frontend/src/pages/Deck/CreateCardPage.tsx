@@ -4,7 +4,7 @@ import {
     useParams,
     useBlocker,
 } from "react-router-dom";
-import { Info, Plus, Settings } from "lucide-react";
+import { Info, Plus } from "lucide-react";
 import CardFrontsideField from "@/components/create-card/CardFrontsideField";
 import CardBacksideField from "@/components/create-card/CardBacksideField";
 import { ModeSelectorWithDescription } from "@/components/create-card/ModeSelector";

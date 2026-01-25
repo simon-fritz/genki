@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { getCardsByDeck, reviewCard, type Card as CardType } from "@/api/cards";
 import { getDeck, type Deck } from "@/api/decks";
 import { toast } from "sonner";
-import { Loader2, CheckCircle2, ArrowLeft, Settings } from "lucide-react";
+import { Loader2, CheckCircle2, ArrowLeft } from "lucide-react";
 import { MarkdownViewer } from "@/components/ui/markdown-viewer";
 
 export default function StudyPage() {
@@ -171,15 +171,6 @@ export default function StudyPage() {
                 
                 {/* Header Info */}
                 <div className="text-center space-y-2 relative">
-                    <Button 
-                        variant="ghost" 
-                        size="icon"
-                        className="absolute right-0 top-0"
-                        onClick={() => navigate("/settings/learning-style")}
-                        title="Settings"
-                    >
-                        <Settings className="h-5 w-5" />
-                    </Button>
                     <h1 className="text-2xl font-bold text-gray-900">
                         {deck?.name || "Studying"}
                     </h1>
