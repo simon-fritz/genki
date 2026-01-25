@@ -18,6 +18,7 @@ import {
     type Language,
     type AnalogyDomain,
 } from "@/api/preferences";
+import useTitle from "@/hooks/useTitle";
 
 // Checkbox field component
 function CheckboxField({
@@ -233,6 +234,9 @@ const LANGUAGE_OPTIONS: {
 ];
 
 function SettingsPage() {
+    // set tab title
+    useTitle("Learning Preferences");
+    
     const location = useLocation();
     const navigate = useNavigate();
     const fromDeckSetup = location.state?.fromDeckSetup === true;

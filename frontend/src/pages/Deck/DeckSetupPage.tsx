@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import Stepper from "@/components/ui/stepper";
@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { uploadDocument } from "@/api/decks";
 import { markDeckHasDocuments } from "@/lib/deckDocuments";
 import axios from "axios";
+import useTitle from "@/hooks/useTitle";
+import { getDeck } from "@/api/decks";
 
 const STEPS = [
     { title: "Upload Documents", description: "Optional" },
@@ -18,12 +20,38 @@ const DeckSetupPage = () => {
     const navigate = useNavigate();
     const { deckId } = useParams();
     const location = useLocation();
-    const deckName = location.state?.deckName || "Your Deck";
+    const [deckName, setDeckName] = useState<null | string>(location.state?.deckName);
+
+    // set tab title
+    useTitle(deckName ? `Setting up ${deckName}` : "Setting up a new deck");
 
     const [currentStep, setCurrentStep] = useState(location.state?.fromSettingsPage ? 1 : 0);
     const [uploading, setUploading] = useState(false);
     const [uploadedFiles, setUploadedFiles] = useState<string[]>(location.state?.uploadedFiles || []);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // fall back to using API to get deck name if not stored in location state
+    // i.e. happens when user types URL directly instead of accessing page from dashboard
+    useEffect(() => {
+        let cancelled = false;
+
+        if (!deckId) {
+            navigate("/");
+            return;
+        }
+        if (!deckName) {
+            getDeck(deckId)
+                .then((deck) => {
+                    if (!cancelled) setDeckName(deck.name);
+                })
+                .catch(() => {
+                    if (!cancelled) {
+                        toast.error("The selected deck couldn't be found.");
+                        navigate("/");
+                    }
+                });
+        }
+    }, []);
 
     const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -110,10 +138,10 @@ const DeckSetupPage = () => {
                 {/* Header */}
                 <div className="text-center mb-8">
                     <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                        Set Up Your Deck
+                        Set up your new deck
                     </h1>
                     <p className="text-gray-600">
-                        Get started with <span className="font-medium">{deckName}</span>
+                        Get started with <span className="font-medium">{deckName ? deckName : "your new deck"}</span>
                     </p>
                 </div>
 

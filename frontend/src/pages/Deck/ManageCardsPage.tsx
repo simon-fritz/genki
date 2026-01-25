@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { getCardsByDeck, type Card } from "@/api/cards";
 import { getDeck, type Deck } from "@/api/decks";
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,12 @@ import { ArrowLeft, Loader2, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import EditCardModal from "@/components/card/EditCardModal";
 import CardDeleteDialog from "@/components/manage-cards/CardDeleteDialog";
+import useTitle from "@/hooks/useTitle";
 
 export default function ManageCardsPage() {
     const { deckId } = useParams<{ deckId: string }>();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [deck, setDeck] = useState<Deck | null>(null);
     const [cards, setCards] = useState<Card[]>([]);
@@ -19,6 +21,34 @@ export default function ManageCardsPage() {
     const [editingCard, setEditingCard] = useState<Card | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [deletingCard, setDeletingCard] = useState<Card | null>(null);
+
+    const [deckName, setDeckName] = useState<null | string>(location.state?.deckName);
+
+    // fall back to using API to get deck name if not stored in location state
+    // i.e. happens when user types URL directly instead of accessing page from dashboard
+    useEffect(() => {
+        let cancelled = false;
+
+        if (!deckId) {
+            navigate("/");
+            return;
+        }
+        if (!deckName) {
+            getDeck(deckId)
+                .then((deck) => {
+                    if (!cancelled) setDeckName(deck.name);
+                })
+                .catch(() => {
+                    if (!cancelled) {
+                        toast.error("The selected deck couldn't be found.");
+                        navigate("/");
+                    }
+                });
+        }
+    }, []);
+
+    // set tab title
+    useTitle(deckName ? `Editing cards in ${deckName}` : "Editing cards");
 
     const fetchData = async () => {
         if (!deckId) {

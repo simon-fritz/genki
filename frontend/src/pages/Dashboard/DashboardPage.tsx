@@ -7,8 +7,12 @@ import type { Deck } from "@/api/decks";
 import { getCardsByDeck } from "@/api/cards";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { toast } from "sonner";
+import useTitle from "@/hooks/useTitle";
 
 const DashboardPage = () => {
+    // set tab name
+    useTitle("Dashboard");
+
     const [decksFetched, setDecksFetched] = useState<Deck[]>([]);
     const [deckDueCounts, setDeckDueCounts] = useState<Record<string, number>>({});
     const [fetchError, setFetchError] = useState(false);

@@ -7,6 +7,7 @@ import { getDeck, type Deck } from "@/api/decks";
 import { toast } from "sonner";
 import { Loader2, CheckCircle2, ArrowLeft } from "lucide-react";
 import { MarkdownViewer } from "@/components/ui/markdown-viewer";
+import useTitle from "@/hooks/useTitle";
 
 export default function StudyPage() {
     const { deckId } = useParams<{ deckId: string }>();
@@ -20,6 +21,9 @@ export default function StudyPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // set tab title
+    useTitle(deck ? `Studying ${deck.name}` : "Studying flashcards");
 
     useEffect(() => {
         if (!deckId) {

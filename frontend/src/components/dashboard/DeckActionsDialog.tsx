@@ -64,7 +64,7 @@ const DeckActionsDialog = ({
 
     const handleManageCards = () => {
         onOpenChange(false);
-        navigate(`/deck/${deck.id}/manage`);
+        navigate(`/deck/${deck.id}/manage`, {state: {deckName: deck.name}});
     };
 
     const handleEdit = () => {

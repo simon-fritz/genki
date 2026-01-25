@@ -27,6 +27,7 @@ import ChangedFrontsideConfirmationDialog from "@/components/create-card/Changed
 import ImprovementsPanel from "@/components/create-card/ImprovementsPanel";
 import { deckHasDocuments } from "@/lib/deckDocuments";
 import { isAxiosError } from "axios";
+import useTitle from "@/hooks/useTitle";
 
 // Normalize markdown to ensure consistent list formatting
 function normalizeMarkdown(text: string): string {
@@ -73,6 +74,9 @@ const CreateCardPage = () => {
     const [showImprovementsPanel, setShowImprovementsPanel] = useState(false);
     const [isSubmittingImprovement, setIsSubmittingImprovement] =
         useState(false);
+
+    // set tab name
+    useTitle(deckName ? `Adding cards in ${deckName}`: "Adding cards");
 
     // Block navigation when there's unsaved content
     const hasUnsavedContent = !!(front.trim() || back.trim());
