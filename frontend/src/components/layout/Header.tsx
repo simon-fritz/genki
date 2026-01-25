@@ -44,7 +44,7 @@ const Header = () => {
                     alt="Anki GenAI Logo"
                     className="h-14 w-auto"
                 />
-                <p className="text-2xl font-bold text-gray-900">GenKi</p>
+                <p className="text-2xl font-bold text-gray-900">Genki</p>
             </div>
             {/* user and settings */}
             {getAccessToken() ? (
