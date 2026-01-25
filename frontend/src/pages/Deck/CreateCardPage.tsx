@@ -59,9 +59,7 @@ const CreateCardPage = () => {
     const [showExitDialog, setShowExitDialog] = useState(false);
     const [completionsEnabled, setCompletionsEnabled] = useState(true);
     // Default to rapid mode, only use accuracy mode if documents are uploaded
-    const [generationMode, setGenerationMode] = useState<"rapid" | "accuracy">(
-        hasDocuments ? "accuracy" : "rapid",
-    );
+    const [generationMode, setGenerationMode] = useState<"rapid" | "accuracy">("rapid");
     const rapidModeEnabled = generationMode === "rapid";
     const backsideEditorRef = useRef<MarkdownEditorRef>(null);
     const [changesSinceLastGeneration, setChangesSinceLastGeneration] =
